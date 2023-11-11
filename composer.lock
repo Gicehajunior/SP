@@ -1,0 +1,75 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "8b237bcd1cc05548f65fc3fa454cd0cc",
+    "packages": [
+        {
+            "name": "sp-templating-engine/sp-templating-engine",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Gicehajunior/SPTemplateEngine.git",
+                "reference": "9571454194d3bde61a5862eed6d067897ba740d7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Gicehajunior/SPTemplateEngine/zipball/9571454194d3bde61a5862eed6d067897ba740d7",
+                "reference": "9571454194d3bde61a5862eed6d067897ba740d7",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "SelfPhp/TemplatingEngine/SPTemplateEngine.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Giceha Junior",
+                    "email": "gicehajunior76@daphascomp.com",
+                    "homepage": "https://github.com/Gicehajunior/SPTemplateEngine.git"
+                }
+            ],
+            "description": "A versatile and lightweight PHP templating engine designed for seamless integration into web development projects.",
+            "homepage": "https://github.com/Gicehajunior/SPTemplateEngine.git",
+            "keywords": [
+                "css",
+                "development",
+                "engine",
+                "framework",
+                "html",
+                "javascript",
+                "php",
+                "template",
+                "templating",
+                "web"
+            ],
+            "support": {
+                "issues": "https://github.com/Gicehajunior/SPTemplateEngine/issues",
+                "source": "https://github.com/Gicehajunior/SPTemplateEngine/tree/v1.0.1"
+            },
+            "time": "2023-11-10T22:29:30+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=5.3.0"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
+}
