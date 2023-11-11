@@ -44,7 +44,7 @@ use SelfPhp\SP;
 ### Composer installation
 ```bash
 
-composer require selfphp/sp
+composer require selfphp-framework/selfphp-framework
 
 ```
 

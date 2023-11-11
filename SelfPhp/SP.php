@@ -1,6 +1,6 @@
 <?php
 
-namespace SelfPhp\SelfPhp;
+namespace SelfPhp;
 
 use SelfPhp\TemplatingEngine\SPTemplateEngine;
 
