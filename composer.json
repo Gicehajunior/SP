@@ -2,7 +2,7 @@
    "name": "selfphp-framework/selfphp-framework",
    "type": "library",
    "description": "SelfPhp Framework is a PHP framework for web development. It provides a structure, a set of tools and a way of thinking to help you build a website using PHP.",
-   "keywords": [],
+   "keywords": ["php", "framework", "web development"],
    "homepage": "https://github.com/Gicehajunior/SP.git",
    "license": "MIT",
    "authors": [
@@ -23,9 +23,7 @@
    },
    "version": "1.0.0",
    "autoload": {
-      "psr-4": {
-         "App\\": "app/",
-         "SelfPhp\\": "src/"
-      }
+      "classmap": ["src/SP.php"]
    }
+   
 }
