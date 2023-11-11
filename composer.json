@@ -24,7 +24,15 @@
    },
    "version": "1.0.1",
    "autoload": {
-      "classmap": ["SelfPhp/SP.php"]
+      "classmap": [
+         "SelfPhp/SP.php",
+         "SelfPhp/Serve.php",
+         "SelfPhp/Route.php",
+         "SelfPhp/Request.php",
+         "SelfPhp/Path.php",
+         "SelfPhp/Page.php",
+         "SelfPhp/Auth.php"
+      ]
    }
    
 }
