@@ -13,14 +13,20 @@ use SelfPhp\DB\DatabaseManager as DB;
 class Serve extends DB
 {
     /**
+     * The model object. 
+     * @var object
+     */
+    private $model;
+
+    /**
      * @var string The table name to perform operations on.
      */
-    public $table;
+    private $table;
 
     /**
      * @var array The parameters for the SQL query.
      */
-    public $final_params; 
+    private $final_params; 
 
     /**
      * The active database connection resource.
@@ -34,12 +40,32 @@ class Serve extends DB
      * 
      * @param string $table The table name to perform operations on.
      */
-    public function __construct($table = null)
+    public function __construct($model = null)
     {   
         $this->row = null;
-        $this->rows = null;
-        $this->table = $this->table; 
-        $this->connection = (new DB())->connect();
+        $this->rows = null; 
+        $this->model = $model;
+        $this->table = $this->table();  
+        $this->connection = DB::connect();
+    }
+
+    /**
+     * Sets the table name to perform operations on.
+     * 
+     * @param string $table The table name to perform operations on.
+     * @return Serve The Serve object.
+     */
+    public function table()
+    { 
+        $table = $this->model::$table;
+
+        if (isset($table) && !empty($table)) {
+            $this->table = $table;
+        } else {
+            throw new \Exception("No table name specified in the " . get_class($this->model) . " model.");
+        }
+
+        return $this->table;
     }
 
     /**

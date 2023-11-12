@@ -1,6 +1,6 @@
 <?php
 
-namespace SelfPhp\Database;
+namespace SelfPhp\DB;
 
 use SelfPhp\SP;
 use MongoDB\Client;
@@ -161,12 +161,8 @@ class DatabaseManager {
      * reads the corresponding configuration values, and sets the appropriate properties
      * for the DatabaseManager instance. It also establishes the initial database connection.
      */
-    public function setDbConfigurations() {
-        $sp = new SP();
-
-        $appDbConfigurations = $sp->getAppDbConfigurations();
-
-        $this->defaultDB = $appDbConfigurations['default']; 
+    public function setDbConfigurations($defaultDB = null, $appDbConfigurations = []) { 
+        $this->defaultDB = $defaultDB;  
 
         if ($this->defaultDB == 'mysql') {  
             $this->charset = $appDbConfigurations['mysql']['charset'];
@@ -197,9 +193,7 @@ class DatabaseManager {
         $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port']; 
         $this->username = env("DB_USERNAME") ? env("DB_USERNAME") : $appDbConfigurations[$this->defaultDB]['username'];
         $this->password = (env("DB_NAME")) ? env("DB_PASSWORD") : $appDbConfigurations[$this->defaultDB]['password'];
-        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database'];
-
-        $this->connect();
+        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database']; 
     } 
     
     /**
@@ -442,24 +436,34 @@ class DatabaseManager {
      * 
      * @return resource|MongoDB\Client|PDO|false The database connection resource or false on failure.
      */
-    public static function connect() {
-        (new (DatabaseManager()))->setDbConfigurations();
+    public function _connect() {
+        $sp = new SP();
+
+        $appDbConfigurations = $sp->getAppDbConfigurations();
+
+        $defaultDB = $appDbConfigurations['default']; 
         
-        if ($this->defaultDB == 'mysql') {
-            return (new (DatabaseManager()))->mysqlConnect();
-        } elseif ((new (DatabaseManager()))->defaultDB == 'postgresql') {
-            return (new (DatabaseManager()))->postgresqlConnect();
-        } elseif ((new (DatabaseManager()))->defaultDB == 'mongodb') {
-            return (new (DatabaseManager()))->mongodbConnect();
-        } elseif ((new (DatabaseManager()))->defaultDB == 'sqlite') {
-            return (new (DatabaseManager()))->sqliteConnect();
-        } elseif ((new (DatabaseManager()))->defaultDB == 'sqlsrv') {
-            return (new (DatabaseManager()))->sqlsrvConnect();
+        $this->setDbConfigurations($defaultDB, $appDbConfigurations); 
+        
+        if ($defaultDB == 'mysql') {
+            return $this->mysqlConnect();
+        } elseif ($defaultDB == 'postgresql') {
+            return $this->postgresqlConnect();
+        } elseif ($defaultDB == 'mongodb') {
+            return $this->mongodbConnect();
+        } elseif ($defaultDB == 'sqlite') {
+            return $this->sqliteConnect();
+        } elseif ($defaultDB == 'sqlsrv') {
+            return $this->sqlsrvConnect();
         } else {
             // Default to MySQL if the database type is not recognized.
-            return (new (DatabaseManager()))->mysqlConnect();
+            return $mysqlConnect();
         }
     } 
+
+    public static function connect() {
+        return (new DatabaseManager())->_connect();
+    }
 
     /**
      * Closes the active database connection.

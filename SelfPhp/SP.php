@@ -10,7 +10,7 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  *
  * @copyright  2022 SelfPHP Framework Technology
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
- * @version    Release: 1.0.2
+ * @version    Release: 1.0.3
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
  * @since      Class available since Release 1.0.0
  */
@@ -55,6 +55,17 @@ class SP
     public function serve_json(array $data)
     {
         return json_encode($data);
+    }
+
+    /**
+     * Returns the application database configurations.
+     *
+     * @return object The application database configurations.
+     */
+    public function getAppDbConfigurations()
+    {
+        $db_config = $this->request_config("Database");
+        return $db_config;
     }
 
     /**
