@@ -2,23 +2,16 @@
 
 namespace SelfPhp;
 
-use mysqli;
-use SelfPhp\database\Database; 
 use SelfPhp\SP;
+use SelfPhp\DB\DatabaseManager as DB; 
 
 /**
  * Class Serve
  * 
  * Handles database operations such as saving, updating, and fetching rows.
  */
-class Serve
+class Serve extends DB
 {
-
-    /**
-     * @var mysqli The database connection object.
-     */
-    public $db_connection;
-
     /**
      * @var string The table name to perform operations on.
      */
@@ -27,22 +20,26 @@ class Serve
     /**
      * @var array The parameters for the SQL query.
      */
-    public $final_params;
+    public $final_params; 
+
+    /**
+     * The active database connection resource.
+     *
+     * @var resource|MongoDB\Client|PDO
+     */
+    private $connection;
 
     /**
      * Serve constructor.
      * 
      * @param string $table The table name to perform operations on.
      */
-    public function __construct($table)
-    {
-        $this->table = $table;
-        
-        $this->db_connection = new Database();
-        $this->db_connection = $this->db_connection->connect();
-
+    public function __construct($table = null)
+    {   
         $this->row = null;
         $this->rows = null;
+        $this->table = $this->table; 
+        $this->connection = (new DB())->connect();
     }
 
     /**
@@ -82,7 +79,7 @@ class Serve
             $key_values = implode("', '", $key_values);
 
             $query = "INSERT INTO $this->table($table_column_keys) VALUES('$key_values')";
-            $result = mysqli_query($this->db_connection, $query); 
+            $result = mysqli_query($this->connection, $query); 
 
             if ($result == true or is_object($result)) {
                 return true;
@@ -130,7 +127,7 @@ class Serve
             $query = "UPDATE $this->table SET $this->final_params WHERE " . $appendable_query_string; 
         } 
         
-        $result = mysqli_query($this->db_connection, $query);
+        $result = mysqli_query($this->connection, $query);
 
         if ($result == true or is_object($result)) {
             return true;
@@ -150,7 +147,7 @@ class Serve
     { 
         try {
             $query = "SELECT * FROM $this->table";
-            $result = mysqli_query($this->db_connection, $query);
+            $result = mysqli_query($this->connection, $query);
 
             $row_array = array();
             
@@ -177,7 +174,7 @@ class Serve
     public function fetchAllInDescOrder() {
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at DESC";
-            $result = mysqli_query($this->db_connection, $query);
+            $result = mysqli_query($this->connection, $query);
 
             $row_array = array();
 
@@ -205,7 +202,7 @@ class Serve
     public function fetchAllInAscOrder() {
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at ASC";
-            $result = mysqli_query($this->db_connection, $query);
+            $result = mysqli_query($this->connection, $query);
 
             $row_array = array();
 
@@ -236,7 +233,7 @@ class Serve
             $row = array();
 
             $query = "SELECT * FROM $this->table WHERE id='" . $id . "'";
-            $result = mysqli_query($this->db_connection, $query); 
+            $result = mysqli_query($this->connection, $query); 
 
             if ($result == true or is_object($result)) {
                 $row = mysqli_fetch_assoc($result);
@@ -262,7 +259,7 @@ class Serve
 
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
-            $result = mysqli_query($this->db_connection, $query);
+            $result = mysqli_query($this->connection, $query);
             
             $row_count = mysqli_num_rows($result);
 
@@ -309,7 +306,7 @@ class Serve
                 $query = "SELECT * FROM $this->table WHERE " . $appendable_query_string; 
             } 
 
-            $result = mysqli_query($this->db_connection, $query);
+            $result = mysqli_query($this->connection, $query);
             
             $row_array = array();
 
@@ -360,7 +357,7 @@ class Serve
     { 
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
-            $result = mysqli_query($this->db_connection, $query); 
+            $result = mysqli_query($this->connection, $query); 
 
             $row_array = array();
 
@@ -387,7 +384,7 @@ class Serve
     public function TrashBasedOnId(int $id) {
         try {
             $query = "DELETE FROM $this->table WHERE id ='" . $id . "'";
-            $result = mysqli_query($this->db_connection, $query); 
+            $result = mysqli_query($this->connection, $query); 
 
             if ($result) {
                 return true;

@@ -20,9 +20,10 @@
    "require": {
       "php": ">=5.3.0",
       "altorouter/altorouter": "1.1.0",
-      "sp-templating-engine/sp-templating-engine": "^1.0"
+      "sp-templating-engine/sp-templating-engine": "^1.0",
+      "mongodb/mongodb": "^1.16"
    },
-   "version": "1.0.1",
+   "version": "1.0.2",
    "autoload": {
       "classmap": [
          "SelfPhp/SP.php",
@@ -31,7 +32,8 @@
          "SelfPhp/Request.php",
          "SelfPhp/Path.php",
          "SelfPhp/Page.php",
-         "SelfPhp/Auth.php"
+         "SelfPhp/Auth.php",
+         "SelfPhp/DB/DatabaseManager.php"
       ]
    }
    
