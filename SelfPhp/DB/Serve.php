@@ -1,6 +1,6 @@
 <?php
 
-namespace SelfPhp;
+namespace SelfPhp\DB;
 
 use SelfPhp\SP;
 use SelfPhp\DB\SPQueryBuilder as DB; 
@@ -44,9 +44,8 @@ class Serve extends DB
     {   
         $this->row = null;
         $this->rows = null; 
-        $this->model = $model;
-        $this->table = $this->table();  
-        $this->connection = $this->db_connection;
+        $this->model = $model; 
+        $this->connection = DB::connect();
     }
 
     /**
@@ -57,6 +56,10 @@ class Serve extends DB
      */
     public function table()
     { 
+        if (is_null($this->model)) {
+            throw new \Exception("No model specified.");
+        }
+
         $table = $this->model::$table;
 
         if (isset($table) && !empty($table)) {
@@ -82,6 +85,7 @@ class Serve extends DB
      */
     public function save(array $post_object)
     {
+        $this->table = $this->table(); 
         try {
             $table_column_keys = array_keys($post_object);
 
@@ -125,6 +129,7 @@ class Serve extends DB
      * @return bool 
      */
     public function update_on_condition($post_object = [], $params_array = []) { 
+        $this->table = $this->table(); 
 
         // Where clause params
         $appendable_query_string = null; 
@@ -171,6 +176,8 @@ class Serve extends DB
      */
     public function fetchAll()
     { 
+        $this->table = $this->table(); 
+
         try {
             $query = "SELECT * FROM $this->table";
             $result = mysqli_query($this->connection, $query);
@@ -198,6 +205,8 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function fetchAllInDescOrder() {
+        $this->table = $this->table(); 
+
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at DESC";
             $result = mysqli_query($this->connection, $query);
@@ -226,6 +235,8 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function fetchAllInAscOrder() {
+        $this->table = $this->table(); 
+
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at ASC";
             $result = mysqli_query($this->connection, $query);
@@ -255,6 +266,7 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function FetchById(int $id) {
+        $this->table = $this->table(); 
         try {
             $row = array();
 
@@ -281,6 +293,8 @@ class Serve extends DB
      */
     public function user_exists_on_condition(array $post_object = [])
     {
+        $this->table = $this->table(); 
+
         $exists = false;
 
         try {
@@ -309,6 +323,8 @@ class Serve extends DB
      */
     public function query_by_condition(array $post_object = [])
     {  
+        $this->table = $this->table(); 
+        
         try {
             $appendable_query_string = null;
 
@@ -381,6 +397,8 @@ class Serve extends DB
      */
     public function getUserByEmail(array $post_object = [])
     { 
+        $this->table = $this->table(); 
+
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
             $result = mysqli_query($this->connection, $query); 
@@ -408,6 +426,8 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function TrashBasedOnId(int $id) {
+        $this->table = $this->table(); 
+        
         try {
             $query = "DELETE FROM $this->table WHERE id ='" . $id . "'";
             $result = mysqli_query($this->connection, $query); 

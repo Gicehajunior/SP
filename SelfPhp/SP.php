@@ -10,7 +10,7 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  *
  * @copyright  2022 SelfPHP Framework Technology
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
- * @version    Release: 1.0.5
+ * @version    Release: 1.0.6
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
  * @since      Class available since Release 1.0.0
  */

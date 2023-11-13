@@ -43,6 +43,12 @@ class SPQueryBuilder extends DB
         $this->mysqli = $mysqli;
     }
 
+    public function _select($table, $columns = ['*']) {
+        $this->query = "SELECT " . implode(', ', $columns);
+        $this->query .= " FROM $table";
+        return $this;
+    }
+
     /**
      * Select columns from a table.
      *
@@ -50,11 +56,9 @@ class SPQueryBuilder extends DB
      * @param array  $columns  An array of columns to select. Default is ['*'] (all columns).
      * @return QueryBuilder    Returns $this for method chaining.
      */
-    public function select($table, $columns = ['*'])
+    public static function select($table, $columns = ['*'])
     {
-        $this->query = "SELECT " . implode(', ', $columns);
-        $this->query .= " FROM $table";
-        return $this;
+        return (new SPQueryBuilder())->_select($table, $columns = ['*']); 
     }
 
     /**
@@ -64,8 +68,15 @@ class SPQueryBuilder extends DB
      * @return QueryBuilder     Returns $this for method chaining.
      */
     public function where($condition)
-    {
-        $this->query .= " WHERE $condition";
+    { 
+        // if this query has no WHERE clause, add one
+        if (strpos($this->query, 'WHERE') === false) {
+            $this->query .= " WHERE $condition";
+        } else {
+            // if this query already has a WHERE clause, add an AND clause
+            $this->query .= " AND $condition";
+        }
+        
         return $this;
     }
 
