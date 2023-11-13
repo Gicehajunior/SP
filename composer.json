@@ -33,7 +33,8 @@
          "SelfPhp/Path.php",
          "SelfPhp/Page.php",
          "SelfPhp/Auth.php",
-         "SelfPhp/DB/DatabaseManager.php"
+         "SelfPhp/DB/DatabaseManager.php",
+         "SelfPhp/DB/SPQueryBuilder.php"
       ]
    }
    

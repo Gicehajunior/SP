@@ -1,6 +1,6 @@
 <?php
 
-namespace SelfPhp;
+namespace SelfPhp\DB;
 
 use SelfPhp\DB\DatabaseManager as DB; 
 
