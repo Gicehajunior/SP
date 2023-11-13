@@ -23,7 +23,7 @@
       "sp-templating-engine/sp-templating-engine": "^1.0",
       "mongodb/mongodb": "^1.16"
    },
-   "version": "1.0.3",
+   "version": "1.0.4",
    "autoload": {
       "classmap": [
          "SelfPhp/SP.php",

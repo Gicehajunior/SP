@@ -3,7 +3,7 @@
 namespace SelfPhp;
 
 use SelfPhp\SP;
-use SelfPhp\DB\DatabaseManager as DB; 
+use SelfPhp\DB\SPQueryBuilder as DB; 
 
 /**
  * Class Serve
@@ -46,7 +46,7 @@ class Serve extends DB
         $this->rows = null; 
         $this->model = $model;
         $this->table = $this->table();  
-        $this->connection = DB::connect();
+        $this->connection = $this->db_connection;
     }
 
     /**
