@@ -59,13 +59,13 @@ class Path extends AltoRouter
     }
 
     /**
-     * Handles routing and controller execution.
+     * Instantiates a class with dynamic parameters.
      * 
-     * @return void
+     * @param string $controller The controller to be instantiated.
+     * @return object|null The instantiated controller object or null if not found.
      */
-    public function ClassInstantiationHelper($controller)
+    public function classInstantiationHelper($controller)
     {
-        // Assuming $controller is the class name
         $controllerInstance = null;
 
         if (class_exists($controller)) {
@@ -75,24 +75,15 @@ class Path extends AltoRouter
                 $constructor = $reflectionClass->getMethod('__construct');
                 $params = [];
 
-                foreach ($constructor->getParameters() as $param) {
-                    // Check if the parameter has a type
+                foreach ($constructor->getParameters() as $param) { 
                     if ($param->hasType()) {
-                        // You might want to handle different types here
-                        $typeName = $param->getType()->getName();
-
-                        // Example: check if the type is a built-in PHP type
-                        if ($param->getType()->isBuiltin()) {
-                            // Handle built-in types (int, string, etc.)
-                            // This is a basic example, you might need more sophisticated handling
+                        $typeName = $param->getType()->getName(); 
+                        if ($param->getType()->isBuiltin()) { 
                             $params[] = $typeName == 'int' ? 0 : '';
-                        } else {
-                            // Handle non-built-in types (e.g., objects)
-                            // This is a basic example, you might need more sophisticated handling
+                        } else { 
                             $params[] = new $typeName();
                         }
-                    } else {
-                        // Parameter doesn't have a type, you might need additional handling
+                    } else { 
                         $params[] = null;
                     }
                 }
@@ -106,6 +97,41 @@ class Path extends AltoRouter
         }
 
         return $controllerInstance;
+    }
+
+    /**
+     * Instantiates a class method with dynamic parameters.
+     * 
+     * @param string $controller The controller to be instantiated.
+     * @param object $controllerInstance The instantiated controller object.
+     * @param string $callable_function The callable function/method within the controller.
+     * @return mixed The response from the controller.
+     */
+    public function classMethodInstantiationHelper($controller, $controllerInstance, $callable_function)
+    {
+        $reflectionClass = new \ReflectionClass($controller);
+
+        $reflectionMethod = $reflectionClass->getMethod($callable_function);
+
+        $params = [];
+
+        foreach ($reflectionMethod->getParameters() as $param) {
+            if ($param->hasType()) {
+                $typeName = $param->getType()->getName();
+                if ($param->getType()->isBuiltin()) {
+                    $params[] = $typeName == 'int' ? 0 : '';
+                } else {
+                    $params[] = new $typeName();
+                }
+            } else {
+                if ($param->getName() == 'id') {
+                    $params[] = isset((new Request())->get->id) ? (new Request())->get->id : null;
+                }
+                $params[] = null;
+            }
+        } 
+
+        return $reflectionMethod->invokeArgs($controllerInstance, $params);
     }
 
     /**
@@ -135,9 +161,9 @@ class Path extends AltoRouter
                 throw new \Exception($controller . " Controller not found");
             }
 
-            $controllerInstance = $path->ClassInstantiationHelper($controller);
+            $controllerInstance = $path->classInstantiationHelper($controller);
 
-            $response = $controllerInstance->$callable_function((new Request()));
+            $response = $path->classMethodInstantiationHelper($controller, $controllerInstance, $callable_function);
 
             $data = null;
 
