@@ -2,7 +2,7 @@
 
 namespace SelfPhp\DB;
 
-use SelfPhp\DB\DatabaseManager as DB; 
+use SelfPhp\DB\Serve; 
 
 /**
  * Database Query Builder Class
@@ -21,7 +21,7 @@ use SelfPhp\DB\DatabaseManager as DB;
  * @author Giceha Junior: https://github.com/Gicehajunior
  * @link https://github.com/Gicehajunior/selfphp-framework
  */
-class SPQueryBuilder extends DB
+class SPQueryBuilder
 {
     /** @var string The generated SQL query. */
     private $query;
@@ -32,6 +32,12 @@ class SPQueryBuilder extends DB
     /** @var mysqli The mysqli instance. */
     private $mysqli;
 
+    /** @var array The fetched rows. */
+    private $rows;
+
+    /** @var array The first row from the fetched rows. */
+    private $row; 
+
     /**
      * QueryBuilder constructor.
      *
@@ -39,10 +45,83 @@ class SPQueryBuilder extends DB
      */
     public function __construct()
     {
-        $mysqli = DB::connect();
-        $this->mysqli = $mysqli;
+        $this->mysqli = (new Serve())->getconnection();
     }
 
+    /**
+     * Sets additional default values for timestamps ('created_at' and 'updated_at') in the given data array.
+     *
+     * @param array $data The data array to which additional values may be added.
+     */
+    public function setAdditionalNewDataToDataVar($data)
+    {
+        // Check if the data array is not empty
+        if (count($data) > 0) {
+            // Check and set 'created_at' if not already set
+            if (!isset($data['created_at'])) {
+                $data['created_at'] = date('Y-m-d H:i:s');
+            }
+
+            // Check and set 'updated_at' if not already set
+            if (!isset($data['updated_at'])) {
+                $data['updated_at'] = date('Y-m-d H:i:s');
+            }
+        }
+    }
+
+    /**
+     * Insert data into a table.
+     * 
+     * @param array $data An associative array of column-value pairs to insert. 
+     * @return $data.
+     */
+    public function _create(array $data) {   
+        $this->data = $data;  
+        $this->setAdditionalNewDataToDataVar($this->data);
+        
+        return $this;
+    }
+
+    /**
+     * Insert data into a table.
+     * 
+     * @param array  $data  An associative array of column-value pairs to insert. 
+     */
+    public static function create(array $data) {  
+        return (new Serve())->_create($data);
+    }
+
+
+    /**
+     * Insert data into a table.
+     * 
+     * @param array $data An associative array of column-value pairs to insert. 
+     * @return $data.
+     */
+    public function _update(array $data, array $params = []) {  
+        $this->data = $data;  
+        $this->params = $params;
+        $this->setAdditionalNewDataToDataVar($this->data);
+        
+        return $this;
+    }
+
+    /**
+     * Insert data into a table.
+     * 
+     * @param array  $data  An associative array of column-value pairs to insert. 
+     */
+    public static function updateDB(array $data, array $params = []) {  
+        return (new Serve())->_update($data, $params);
+    }
+
+    /**
+     * Select columns from a table.
+     *
+     * @param string $table    The table name.
+     * @param array  $columns  An array of columns to select. Default is ['*'] (all columns).
+     * @return QueryBuilder    Returns $this for method chaining.
+     */
     public function _select($table, $columns = ['*']) {
         $this->query = "SELECT " . implode(', ', $columns);
         $this->query .= " FROM $table";
@@ -211,8 +290,19 @@ class SPQueryBuilder extends DB
 
         // Reset query and parameters for potential reuse
         $this->query = '';
-        $this->params = [];
+        $this->params = []; 
 
         return $result;
     }
+
+    /**
+     * Gets the first row from the fetched rows.
+     * 
+     * @return QueryBuilder The Serve object.
+     */
+    public function first() {
+        $result = $this->execute(); 
+        $this->row = current($result);
+        return $this->row;
+    } 
 }

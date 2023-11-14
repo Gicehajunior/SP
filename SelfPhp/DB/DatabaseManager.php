@@ -3,7 +3,11 @@
 namespace SelfPhp\DB;
 
 use SelfPhp\SP;
-use MongoDB\Client;
+use \mysqli;
+use \PDO;
+use \MongoDB\Driver\Manager;
+use \SQLite3;
+use SelfPhp\DB\SPQueryBuilder; 
 
 /**
  * Class DatabaseManager
@@ -19,7 +23,7 @@ use MongoDB\Client;
  * @since 1.0.0 
  * @author Giceha Junior: https://github.com/Gicehajunior
  */
-class DatabaseManager {
+class DatabaseManager extends SPQueryBuilder {
     /**
      * The database driver used for the connection (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
      *
@@ -123,7 +127,7 @@ class DatabaseManager {
      *
      * @var resource|MongoDB\Client|PDO
      */
-    private $db_connection;
+    private $connection;
 
     /**
      * The default database type (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
@@ -145,6 +149,20 @@ class DatabaseManager {
      * @var string|null
      */
     private $connection_error = null;
+
+    /** 
+     * The data to be saved. 
+     * 
+     * @var array
+     * */
+    private $data;
+
+    /** 
+     * The parameters to be used in the query.
+     * 
+     * @var array
+     * */
+    private $params;
 
     /**
      * Constructor for the DatabaseManager class.
@@ -206,8 +224,13 @@ class DatabaseManager {
      * @return resource|false The MySQL database connection resource or false on failure.
      */
     public function mysqlConnect() {  
-        // Establishing a mysql database connection
-        $this->db_connection = mysqli_connect(
+        // Check if the MySQLi extension is installed
+        if (! extension_loaded('mysqli')) {
+            throw new \Exception("The MySQLi extension is not installed!");
+        }
+
+        // Establishing a mysql database connection 
+        $this->connection = mysqli_connect(
             $this->host,
             $this->username,
             $this->password,
@@ -215,18 +238,18 @@ class DatabaseManager {
             $this->port
         );  
 
-        if (!$this->db_connection) {
+        if (!$this->connection) {
             $this->connection_error = mysqli_connect_error();
 
             die("Connection failed: " . $this->connection_error);
         }
         
         // Set character set
-        mysqli_set_charset($this->db_connection, $this->charset);
+        mysqli_set_charset($this->connection, $this->charset);
 
         // Set collation
         $collationQuery = "SET collation_connection=$this->collation";
-        mysqli_query($this->db_connection, $collationQuery);
+        mysqli_query($this->connection, $collationQuery);
 
         // set prefix
         if ($this->prefix !== null || !empty($this->prefix)) {
@@ -236,12 +259,12 @@ class DatabaseManager {
         // Additional configuration options
         if ($this->strict) {
             $strictQuery = "SET SESSION sql_mode='STRICT_ALL_TABLES'";
-            mysqli_query($this->db_connection, $strictQuery);
+            mysqli_query($this->connection, $strictQuery);
         }
 
         if ($this->engine !== null || !empty($this->engine)) {
             $engineQuery = "SET storage_engine=$this->engine";
-            mysqli_query($this->db_connection, $engineQuery);
+            mysqli_query($this->connection, $engineQuery);
         }
 
         // Set any additional options
@@ -249,12 +272,12 @@ class DatabaseManager {
             foreach ($this->options as $option => $value) {
                 if (!empty($value)) {
                     $optionQuery = "SET $option=$value"; 
-                    mysqli_query($this->db_connection, $optionQuery); 
+                    mysqli_query($this->connection, $optionQuery); 
                 } 
             }
         } 
 
-        return $this->db_connection;
+        return $this->connection;
     }
 
     /**
@@ -266,6 +289,11 @@ class DatabaseManager {
      * @return resource|false The PostgreSQL database connection resource or false on failure.
      */
     public function postgresqlConnect() {
+        // Check if the pgsql extension is installed
+        if (! extension_loaded('pgsql')) {
+            throw new \Exception("The pgsql extension is not installed!");
+        }
+
         // Establishing a PostgreSQL database connection
         $connectionString = "host={$this->host} port={$this->port} dbname={$this->database} user={$this->username} password={$this->password}";
         
@@ -278,22 +306,22 @@ class DatabaseManager {
             $connectionString .= " sslmode={$this->sslmode}";
         }
     
-        $this->db_connection = pg_connect($connectionString);
+        $this->connection = pg_connect($connectionString);
     
         // Check if the connection was successful
-        if (!$this->db_connection) {
+        if (!$this->connection) {
             $this->connection_error = pg_last_error();
 
             die("Connection failed: " . $this->connection_error);
         }
     
         // Set client encoding (character set)
-        pg_set_client_encoding($this->db_connection, $this->charset);
+        pg_set_client_encoding($this->connection, $this->charset);
     
         // Additional configuration options
         if ($this->strict) {
             $strictQuery = "SET SESSION sql_mode='STRICT_ALL_TABLES'";
-            pg_query($this->db_connection, $strictQuery);
+            pg_query($this->connection, $strictQuery);
         }
     
         // Set any additional options
@@ -301,12 +329,12 @@ class DatabaseManager {
             foreach ($this->options as $option => $value) {
                 if (!empty($value)) {
                     $optionQuery = "SET $option=$value";
-                    pg_query($this->db_connection, $optionQuery);
+                    pg_query($this->connection, $optionQuery);
                 }
             }
         }
     
-        return $this->db_connection;  
+        return $this->connection;  
     }
 
     /**
@@ -317,7 +345,7 @@ class DatabaseManager {
      * 
      * @return MongoDB\Client The MongoDB client instance.
      */
-    public function mongodbConnect() {
+    public function mongodbConnect() { 
         // Establishing a MongoDB connection
         $mongoConnectionOptions = [];
     
@@ -345,15 +373,15 @@ class DatabaseManager {
         }
     
         // Create MongoDB client
-        $this->db_connection = new MongoDB\Client($mongoConnectionOptions);
+        $this->connection = new MongoDB\Client($mongoConnectionOptions);
     
         // Check if the connection was successful
-        if (!$this->db_connection) {
+        if (!$this->connection) {
             $this->connection_error = "Unable to connect to MongoDB!";
             die("Connection failed: " . $this->connection_error);
         }
     
-        return $this->db_connection;
+        return $this->connection;
     }    
 
     /**
@@ -365,20 +393,25 @@ class DatabaseManager {
      * @return PDO|false The SQLite database connection or false on failure.
      */
     public function sqliteConnect() {
+        // Check if the pdo_sqlite extension is installed
+        if (! extension_loaded('pdo_sqlite')) {
+            throw new \Exception("The pdo_sqlite extension is not installed!");
+        }
+
         // Establishing an SQLite database connection
         $dsn = "sqlite:" . $this->database;
     
         try {
-            $this->db_connection = new PDO($dsn);
+            $this->connection = new PDO($dsn);
     
             // Set any additional options
             if (!empty($this->options)) {
                 foreach ($this->options as $option => $value) {
-                    $this->db_connection->setAttribute($option, $value);
+                    $this->connection->setAttribute($option, $value);
                 }
             }
 
-            return $this->db_connection;
+            return $this->connection;
         } catch (PDOException $e) {
             $this->connection_error = $e->getMessage();
             die("Connection failed: " . $this->connection_error);
@@ -394,6 +427,11 @@ class DatabaseManager {
      * @return resource|false The SQL Server database connection resource or false on failure.
      */
     public function sqlsrvConnect() {
+        // Check if the sqlsrv extension is installed
+        if (! extension_loaded('sqlsrv')) {
+            throw new \Exception("The sqlsrv extension is not installed!");
+        }
+
         // Establishing a SQL Server database connection
         $connectionOptions = [
             'Database' => $this->database,
@@ -412,10 +450,10 @@ class DatabaseManager {
         }
 
         // Create SQL Server connection
-        $this->db_connection = sqlsrv_connect($this->host, $connectionOptions);
+        $this->connection = sqlsrv_connect($this->host, $connectionOptions);
 
         // Check if the connection was successful
-        if (!$this->db_connection) {
+        if (!$this->connection) {
             $this->connection_error = sqlsrv_errors()[0]['message'];
             die("Connection failed: " . $this->connection_error);
         }
@@ -423,11 +461,11 @@ class DatabaseManager {
         // Set any additional options
         if (!empty($this->options)) {
             foreach ($this->options as $option => $value) {
-                sqlsrv_query($this->db_connection, "SET $option=$value");
+                sqlsrv_query($this->connection, "SET $option=$value");
             }
         }
 
-        return $this->db_connection;
+        return $this->connection;
     }
 
     /**
@@ -472,33 +510,33 @@ class DatabaseManager {
      * This method closes the active database connection based on the default database type.
      */
     public function closeConnection() {
-        if ($this->db_connection) {
+        if ($this->connection) {
             switch ($this->defaultDB) {
                 case 'mysql':
-                    mysqli_close($this->db_connection);
+                    mysqli_close($this->connection);
                     break;
 
                 case 'postgresql':
-                    pg_close($this->db_connection);
+                    pg_close($this->connection);
                     break;
 
                 case 'mongodb':
-                    $this->db_connection->close();
+                    $this->connection->close();
                     break;
 
                 case 'sqlite':
-                    $this->db_connection = null;
+                    $this->connection = null;
                     break;
 
                 case 'sqlsrv':
-                    sqlsrv_close($this->db_connection);
+                    sqlsrv_close($this->connection);
                     break; 
                 default:
-                    mysqli_close($this->db_connection);
+                    mysqli_close($this->connection);
             }
 
-            // Set $this->db_connection to null after closing the connection
-            $this->db_connection = null;
+            // Set $this->connection to null after closing the connection
+            $this->connection = null;
         }
     } 
 

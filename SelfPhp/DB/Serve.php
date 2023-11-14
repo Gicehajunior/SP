@@ -3,7 +3,7 @@
 namespace SelfPhp\DB;
 
 use SelfPhp\SP;
-use SelfPhp\DB\SPQueryBuilder as DB; 
+use SelfPhp\DB\DatabaseManager as DB; 
 
 /**
  * Class Serve
@@ -19,9 +19,9 @@ class Serve extends DB
     private $model;
 
     /**
-     * @var string The table name to perform operations on.
+     * @var array model object properties
      */
-    private $table;
+    private $modelObjVars;
 
     /**
      * @var array The parameters for the SQL query.
@@ -29,46 +29,83 @@ class Serve extends DB
     private $final_params; 
 
     /**
-     * The active database connection resource.
+     * A query row from the database.
      *
-     * @var resource|MongoDB\Client|PDO
+     * @var array
      */
-    private $connection;
+    private $row;
 
     /**
-     * Serve constructor.
-     * 
-     * @param string $table The table name to perform operations on.
+     * An array of query rows from the database.
+     *
+     * @var array
      */
-    public function __construct($model = null)
-    {   
-        $this->row = null;
-        $this->rows = null; 
-        $this->model = $model; 
-        $this->connection = DB::connect();
+    private $rows;
+
+    /**
+     * Establishes a database connection using the DB class.
+     *
+     * @return mixed The result of the connect() method from the DB class.
+     *               The specific return type depends on the implementation of the DB::connect() method.
+     */
+    protected function getconnection() {
+        return DB::connect();
     }
 
     /**
-     * Sets the table name to perform operations on.
-     * 
-     * @param string $table The table name to perform operations on.
-     * @return Serve The Serve object.
+     * Retrieves the first model class found within the "App\models" namespace.
+     *
+     * @return string|null The fully qualified class name of the first model found, or null if none is found.
      */
-    public function table()
+    public function getModel()
+    {
+        // Array to store discovered model class names.
+        $models = [];
+
+        // Iterate through all declared classes.
+        foreach (get_declared_classes() as $className) {
+            // Create a reflection class for the current class.
+            $classReflector = new \ReflectionClass($className);
+            
+            // Check if the class name contains "App\models".
+            if (strpos($className, 'App\models') !== false) {
+                // Add the class name to the models array.
+                $models[] = $className;
+            }
+        }
+
+        // Return the fully qualified class name of the first model found, or null if none is found.
+        return current($models);
+    }
+
+    /**
+     * Checks if the database configuration is set correctly for the current model.
+     * Throws an exception if the database table is not set.
+     * If the database connection is not set, it attempts to retrieve it.
+     *
+     * @throws \Exception if the database table is not set for the model.
+     */
+    public function checkIfDBIsSetCorrectly()
     { 
-        if (is_null($this->model)) {
-            throw new \Exception("No model specified.");
+        // Get the model name
+        $this->model = $this->getModel();
+
+        // Get the model object
+        $this->modelObjVars = get_object_vars(new $this->model());
+
+        if (isset($this->modelObjVars['table'])) {
+            $this->table = $this->modelObjVars['table'];
         }
 
-        $table = $this->model::$table;
-
-        if (isset($table) && !empty($table)) {
-            $this->table = $table;
-        } else {
-            throw new \Exception("No table name specified in the " . get_class($this->model) . " model.");
+        // Check if the database table is set
+        if (!isset($this->table) || is_null($this->table) || empty($this->table)) {
+            throw new \Exception('No database table set in ' . $this->model . ' model.');
         }
 
-        return $this->table;
+        // If the database connection is not set, attempt to retrieve it
+        if (empty($this->connection)) {
+            $this->connection = $this->getconnection();
+        }
     }
 
     /**
@@ -83,9 +120,14 @@ class Serve extends DB
      *                      execution by the SQL post request.
      * @return bool 
      */
-    public function save(array $post_object)
+    public function save(array $post_object = [])
     {
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly();  
+
+        if (count($post_object) == 0) {
+            $post_object = $this->data;
+        }
+
         try {
             $table_column_keys = array_keys($post_object);
 
@@ -128,8 +170,16 @@ class Serve extends DB
      * @param array $params_array The conditions for the update.
      * @return bool 
      */
-    public function update_on_condition($post_object = [], $params_array = []) { 
-        $this->table = $this->table(); 
+    public function quickUpdate($post_object = [], $params_array = []) { 
+        $this->checkIfDBIsSetCorrectly(); 
+
+        if (count($post_object) == 0) {
+            $post_object = $this->data;
+        }
+
+        if (count($params_array) == 0) {
+            $params_array = $this->params;
+        }
 
         // Where clause params
         $appendable_query_string = null; 
@@ -176,7 +226,7 @@ class Serve extends DB
      */
     public function fetchAll()
     { 
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
 
         try {
             $query = "SELECT * FROM $this->table";
@@ -205,7 +255,7 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function fetchAllInDescOrder() {
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
 
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at DESC";
@@ -235,7 +285,7 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function fetchAllInAscOrder() {
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
 
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at ASC";
@@ -266,7 +316,7 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function FetchById(int $id) {
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
         try {
             $row = array();
 
@@ -293,7 +343,7 @@ class Serve extends DB
      */
     public function user_exists_on_condition(array $post_object = [])
     {
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
 
         $exists = false;
 
@@ -323,7 +373,7 @@ class Serve extends DB
      */
     public function query_by_condition(array $post_object = [])
     {  
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly();  
         
         try {
             $appendable_query_string = null;
@@ -397,7 +447,7 @@ class Serve extends DB
      */
     public function getUserByEmail(array $post_object = [])
     { 
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
 
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
@@ -426,7 +476,7 @@ class Serve extends DB
      *                  a debug error will be returned.
      */
     public function TrashBasedOnId(int $id) {
-        $this->table = $this->table(); 
+        $this->checkIfDBIsSetCorrectly(); 
         
         try {
             $query = "DELETE FROM $this->table WHERE id ='" . $id . "'";

@@ -59,6 +59,56 @@ class Path extends AltoRouter
     }
 
     /**
+     * Handles routing and controller execution.
+     * 
+     * @return void
+     */
+    public function ClassInstantiationHelper($controller)
+    {
+        // Assuming $controller is the class name
+        $controllerInstance = null;
+
+        if (class_exists($controller)) {
+            $reflectionClass = new \ReflectionClass($controller);
+
+            if ($reflectionClass->hasMethod('__construct')) {
+                $constructor = $reflectionClass->getMethod('__construct');
+                $params = [];
+
+                foreach ($constructor->getParameters() as $param) {
+                    // Check if the parameter has a type
+                    if ($param->hasType()) {
+                        // You might want to handle different types here
+                        $typeName = $param->getType()->getName();
+
+                        // Example: check if the type is a built-in PHP type
+                        if ($param->getType()->isBuiltin()) {
+                            // Handle built-in types (int, string, etc.)
+                            // This is a basic example, you might need more sophisticated handling
+                            $params[] = $typeName == 'int' ? 0 : '';
+                        } else {
+                            // Handle non-built-in types (e.g., objects)
+                            // This is a basic example, you might need more sophisticated handling
+                            $params[] = new $typeName();
+                        }
+                    } else {
+                        // Parameter doesn't have a type, you might need additional handling
+                        $params[] = null;
+                    }
+                }
+
+                // Create an instance with dynamic parameters
+                $controllerInstance = $reflectionClass->newInstanceArgs($params);
+            } else {
+                // Create an instance without parameters
+                $controllerInstance = new $controller();
+            } 
+        }
+
+        return $controllerInstance;
+    }
+
+    /**
      * Static method to handle routing and controller execution.
      * 
      * @param string $controller The controller to be executed.
@@ -84,8 +134,10 @@ class Path extends AltoRouter
             else { 
                 throw new \Exception($controller . " Controller not found");
             }
-            $controller_class = new $controller();
-            $response = $controller_class->$callable_function((new Request()));
+
+            $controllerInstance = $path->ClassInstantiationHelper($controller);
+
+            $response = $controllerInstance->$callable_function((new Request()));
 
             $data = null;
 
