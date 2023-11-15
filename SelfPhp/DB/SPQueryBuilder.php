@@ -17,7 +17,7 @@ use SelfPhp\DB\Serve;
  *
  * @package SelfPHP
  * @category Database
- * @version 1.0.0
+ * @version 1.0.1
  * @author Giceha Junior: https://github.com/Gicehajunior
  * @link https://github.com/Gicehajunior/selfphp-framework
  */
