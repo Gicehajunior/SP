@@ -27,7 +27,7 @@
       "mongodb/mongodb": "*", 
       "ext-sqlite3": "*"
    },
-   "version": "1.0.3",
+   "version": "1.0.4",
    "autoload": {
       "classmap": [
          "SelfPhp/SP.php", 

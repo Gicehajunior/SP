@@ -31,7 +31,7 @@ class Path extends AltoRouter
      * @param string|null $callable_function The callable function/method within the controller.
      */
     public function __construct($controller = null, $callable_function = null)
-    {
+    { 
         // Start session if not already active
         ($this->is_session_active() == true) ? null : session_start();
 
@@ -143,14 +143,14 @@ class Path extends AltoRouter
      */
     public static function route($controller, $callable_function)
     { 
-        try { 
+        try {  
             $path = new Path();
 
-            $sp = new SP();
+            $sp = new SP(); 
 
-            $sp->verify_domain_format(env("APP_DOMAIN"));
+            SP::requestHelperFunctions("Helper");
 
-            $sp->setup_config();  
+            $sp->verify_domain_format(env("APP_DOMAIN")); 
 
             $route = $path->controller_path($controller);
             
@@ -160,6 +160,10 @@ class Path extends AltoRouter
             else { 
                 throw new \Exception($controller . " Controller not found");
             }
+
+            $config = $sp->setup_config();
+
+            $path->setUpCommonApplicationConfigurations($config);
 
             $controllerInstance = $path->classInstantiationHelper($controller);
 
@@ -209,6 +213,75 @@ class Path extends AltoRouter
         }
     }
 
+    /**
+     * Sets up common application configurations.
+     * 
+     * @param array $config The application configuration array.
+     * @return void
+     */
+    public function setUpCommonApplicationConfigurations($config)
+    {
+        // Set the default timezone
+        // check if timezone is correct
+        if ($this->isValidTimezone($config['TIMEZONE'])) {
+            date_default_timezone_set($config['TIMEZONE']);
+        } else {
+            throw new \Exception("Timezone must be in Continent/City format");
+        }
+
+        // Set the default locale
+        // check if locale is correct
+        if (preg_match("/^[a-z]{2}_[A-Z]{2}$/", $config['LOCALE'])) {
+            setlocale(LC_ALL, $config['LOCALE']);
+        } else {
+            throw new \Exception("Locale must be in ISO 639-1 format");
+        }
+
+        // Set the default character encoding 
+        if ($this->isValidCharset($config['CHARACTER_ENCODING'])) {
+            mb_internal_encoding($config['CHARACTER_ENCODING']);
+        } else {
+            throw new \Exception("Character encoding must be in ISO 8859-1 format");
+        }
+
+        // Set the default language
+        // check if language is rhymes with ISO 639-1
+        if (preg_match("/^[a-z]{2}$/", $config['LANGUAGE'])) {
+            mb_language($config['LANGUAGE']);
+        } else {
+            throw new \Exception("Language must be in ISO 639-1 format");
+        } 
+
+        // Set the default currency
+        // check if currency is rhymes with ISO 4217
+        if (preg_match("/^[A-Z]{3}$/", $config['CURRENCY'])) {
+            setlocale(LC_MONETARY, $config['CURRENCY']);
+        } else {
+            throw new \Exception("Currency must be in ISO 4217 format");
+        }
+    }
+
+    function isValidTimezone($timezone)
+    {
+        // Get a list of supported timezones
+        $supportedTimezones = \DateTimeZone::listIdentifiers();
+
+        // Check if the provided timezone is in the list of supported timezones
+        if (in_array($timezone, $supportedTimezones)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function isValidCharset($charset)
+    {
+        // Get a list of supported charsets// Define the pattern for charset validation
+        $pattern = '/^[A-Za-z0-9_\-]+$/';
+
+        // Check if the provided charset matches the pattern
+        return (bool)preg_match($pattern, $charset);
+    }
 
     /**
      * Unsets the controller response session.

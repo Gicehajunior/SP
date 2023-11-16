@@ -10,7 +10,7 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  *
  * @copyright  2022 SelfPHP Framework Technology
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
- * @version    Release: 1.0.2
+ * @version    Release: 1.0.4
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
  * @since      Class available since Release 1.0.0
  */
@@ -31,6 +31,12 @@ class SP
     public function __construct()
     { 
         $this->app = (Object) $this->request_config("app"); 
+    }
+
+    public static function requestHelperFunctions($helper)
+    {
+        $helper = ucfirst(strtolower($helper));
+        require __DIR__ . DIRECTORY_SEPARATOR . $helper . '.php';
     }
 
     /**
@@ -75,7 +81,19 @@ class SP
      */
     public function setup_config()
     {
-        $this->request_config("config");
+        $config_1 = $this->request_config("config");
+        $config_2 = $this->request_config("app"); 
+
+        $config = array_merge($config_1, $config_2);
+
+        return $config;
+    }
+
+    public function config($key)
+    { 
+        $config = $this->setup_config();
+        
+        return $config[$key];
     }
 
     /**
@@ -118,7 +136,7 @@ class SP
      * @return string|null The login page name.
      */
     public function login_page() {    
-        return isset($this->app->AuthPage) ? $this->app->AuthPage : null;
+        return isset($this->app->AUTHPAGE) ? $this->app->AUTHPAGE : null;
     }
 
     /**
@@ -127,7 +145,7 @@ class SP
      * @return string|null The dashboard page name.
      */
     public function dashboard_page() {    
-        return isset($this->app->HomePage) ? $this->app->HomePage : null;
+        return isset($this->app->HOMEPAGE) ? $this->app->HOMEPAGE : null;
     }
 
     /**
@@ -139,7 +157,7 @@ class SP
      */
     public function verify_domain_format($domain=null)
     { 
-        if (!empty($domain)) {
+        if ($domain !== null) {
             if (strpos($domain, "http://") == false || strpos($domain, "https://") == false)
             {
                 return $domain; 
