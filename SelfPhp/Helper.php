@@ -137,7 +137,18 @@ function dashboard_page() {
  * @param mixed $data The data to be passed to the extended file.
  * @return mixed The content of the extended file.
  */
-function page_extends($file, $data=null) {   
+function resource($filename, $data=[]) { 
+    return (new SP())->resource($filename, $data);
+}
+
+/**
+ * Searches for the file passed, requires the file to be parsed
+ * 
+ * @param string $file The name of the file to extend.
+ * @param mixed $data The data to be passed to the extended file.
+ * @return mixed The content of the extended file.
+ */
+function page_extends($file, $data=[]) {   
     $filecontent = (new SP())->resource($file, $data);
 
     echo $filecontent;
