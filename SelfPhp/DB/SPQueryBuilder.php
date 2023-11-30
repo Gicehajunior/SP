@@ -24,10 +24,7 @@ use SelfPhp\DB\Serve;
 class SPQueryBuilder
 {
     /** @var string The generated SQL query. */
-    private $query;
-
-    /** @var array The parameters for the prepared statement. */
-    private $params = [];
+    private $query; 
 
     /** @var mysqli The mysqli instance. */
     private $mysqli;
@@ -70,6 +67,22 @@ class SPQueryBuilder
     }
 
     /**
+     * updates additional default value for timestamp ('updated_at') in the given data array.
+     *
+     * @param array $data The data array to which additional values may be added.
+     */
+    public function updateAdditionalDataInDataVar($data)
+    {
+        // Check if the data array is not empty
+        if (count($data) > 0) { 
+            // Check and set 'updated_at' if not already set
+            if (!isset($data['updated_at'])) {
+                $data['updated_at'] = date('Y-m-d H:i:s');
+            }
+        }
+    }
+
+    /**
      * Insert data into a table.
      * 
      * @param array $data An associative array of column-value pairs to insert. 
@@ -101,7 +114,7 @@ class SPQueryBuilder
     public function _update(array $data, array $params = []) {  
         $this->data = $data;  
         $this->params = $params;
-        $this->setAdditionalNewDataToDataVar($this->data);
+        $this->updateAdditionalDataInDataVar($this->data);
         
         return $this;
     }

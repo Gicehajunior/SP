@@ -158,7 +158,7 @@ class DatabaseManager extends SPQueryBuilder {
     private $data;
 
     /** 
-     * The parameters to be used in the query.
+     * The parameters for the prepared statement.
      * 
      * @var array
      * */

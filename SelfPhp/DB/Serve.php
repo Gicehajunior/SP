@@ -183,12 +183,16 @@ class Serve extends DB
 
         // Where clause params
         $appendable_query_string = null; 
-        foreach ($params_array as $key => $value) {
-            if (!empty($value)) {
-                $command = $key . ' = ' . "$value";
-                $appendable_query_string .= $command;
+
+        if (count($params_array) > 0)
+        {
+            foreach ($params_array as $key => $value) {
+                if (!empty($value)) {
+                    $command = $key . ' = ' . "$value";
+                    $appendable_query_string .= $command;
+                } 
             } 
-        } 
+        }
         // End of where clause params
 
         // Params with  update values
