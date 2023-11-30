@@ -10,7 +10,7 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  *
  * @copyright  2022 SelfPHP Framework Technology
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
- * @version    Release: 1.0.4
+ * @version    Release: 1.0.5
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
  * @since      Class available since Release 1.0.0
  */
@@ -264,6 +264,11 @@ class SP
         
         if (!empty($includedFilePath)) { 
             $includedFile = current($includedFilePath); 
+
+            if (count($data) > 0) {
+                $_SESSION['controller_response_data'] = $data;
+            }
+
             $controllerParsedData = isset($_SESSION['controller_response_data']) ? $_SESSION['controller_response_data'] : null;
             
             if (is_array($controllerParsedData)) {
