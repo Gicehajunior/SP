@@ -190,7 +190,7 @@ class Path extends AltoRouter
             }    
             else {  
                 (new Path())->alternative_callable_method_response($response, $sp); 
-                (new Path())->unset_session(); 
+                (new Path())->unsetSession(); 
             } 
         } catch (\Throwable $th) { 
             echo $th->getMessage();
