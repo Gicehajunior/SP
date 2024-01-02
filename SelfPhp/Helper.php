@@ -109,7 +109,7 @@ function sys_domain($var) {
  * @return mixed The parsed data.
  */
 function file_parser($data, $filename) {
-    return (new SP())->file_parser($data, $filename);
+    return (new SP())->fileParser($data, $filename);
 }
 
 /**
