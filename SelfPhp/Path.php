@@ -259,6 +259,49 @@ class Path extends AltoRouter
         } else {
             throw new \Exception("Currency must be in ISO 4217 format");
         }
+
+        // Override server configurations if they are set and not null
+        if ((isset($config['DISPLAY_ERRORS']) && trim(strtolower($config['DISPLAY_ERRORS'])) == 'on') || (strtolower(env("DEBUG")) == "true")) { 
+            ini_set('display_errors', $config['DISPLAY_ERRORS']);
+        }
+
+        if (isset($config['MAX_EXECUTION_TIME'])) {
+            ini_set('max_execution_time', $config['MAX_EXECUTION_TIME']);
+        }
+
+        if (isset($config['MAX_INPUT_TIME'])) {
+            ini_set('max_input_time', $config['MAX_INPUT_TIME']);
+        }
+
+        if (isset($config['MAX_INPUT_VARS'])) {
+            ini_set('max_input_vars', $config['MAX_INPUT_VARS']);
+        }
+
+        if (isset($config['MEMORY_LIMIT'])) {
+            ini_set('memory_limit', $config['MEMORY_LIMIT']);
+        }
+
+        if (isset($config['POST_MAX_SIZE'])) {
+            ini_set('post_max_size', $config['POST_MAX_SIZE']);
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) { 
+            if (isset($config['SESSION_LIFETIME'])) {
+                ini_set('session.gc_maxlifetime', $config['SESSION_LIFETIME']);
+            }
+
+            if (isset($config['SESSION_SAVE_PATH'])) {
+                ini_set('session.save_path', $config['SESSION_SAVE_PATH']);
+            }
+        }
+
+        if (isset($config['UPLOAD_MAX_FILESIZE'])) {
+            ini_set('upload_max_filesize', $config['UPLOAD_MAX_FILESIZE']);
+        }
+
+        if (isset($config['ZLIB_OUTPUT_COMPRESSION'])) {
+            ini_set('zlib.output_compression', $config['ZLIB_OUTPUT_COMPRESSION']);
+        }
     }
 
     function isValidTimezone($timezone)

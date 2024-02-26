@@ -25,9 +25,10 @@
       "ext-pdo_mysql": "*",
       "ext-pdo_pgsql": "*",
       "mongodb/mongodb": "*", 
-      "ext-sqlite3": "*"
+      "ext-sqlite3": "*",
+      "illuminate/database": "^10.45"
    },
-   "version": "1.0.7",
+   "version": "1.0.8",
    "autoload": {
       "classmap": [
          "SelfPhp/SP.php", 
@@ -35,10 +36,9 @@
          "SelfPhp/Request.php",
          "SelfPhp/Path.php",
          "SelfPhp/Page.php",
-         "SelfPhp/Auth.php",
-         "SelfPhp/DB/DatabaseManager.php",
-         "SelfPhp/DB/SPQueryBuilder.php",
-         "SelfPhp/DB/Serve.php"
+         "SelfPhp/Auth.php", 
+         "SelfPhp/DB/Serve.php",
+         "SelfPhp/DB/DatabaseManager.php"
       ]
    }
    

@@ -161,10 +161,18 @@ function page_extends($file, $data=[]) {
  * @param array $controller_response_data The data to be passed to the view file.
  * @return array The view URL and data.
  */
-function view($view_dir, $data = []) {  
+function view($view_dir, $data = []) { 
     $page = new Page();
-    $response = [];
-    $view_response = $page->View($view_dir, $data);
+    $response = []; 
+    
+    if (isset($_SESSION['controller_response_data']) && !empty($_SESSION['controller_response_data'])) {
+        $_data = $_SESSION['controller_response_data']; 
+        foreach ($_data as $key => $response_data) { 
+            $data[$key] = $response_data; 
+        }
+    }
+    
+    $view_response = $page->View($view_dir, $data); 
 
     $response['view_url'] = $view_response;  
     $response['controller_response_data'] = $data;
@@ -181,5 +189,5 @@ function view($view_dir, $data = []) {
  */
 function route($route, $data = []) {  
     $page = new Page(); 
-    $page->navigate_to($route, $data);
+    $view_response = $page->navigate_to($route, $data); 
 }

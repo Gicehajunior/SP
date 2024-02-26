@@ -267,7 +267,7 @@ class SP
 
             if (count($data) > 0) {
                 $_SESSION['controller_response_data'] = $data;
-            }
+            } 
 
             $controllerParsedData = isset($_SESSION['controller_response_data']) ? $_SESSION['controller_response_data'] : null;
             
@@ -282,7 +282,7 @@ class SP
             return $this->fileParser($data, $includedFile);
         } 
         else {
-            throw new \Exception("FileNotFoundException");
+            throw new \Exception("FileNotFoundException: " . $view . ' could not be found.');
         } 
     }
 
@@ -407,43 +407,82 @@ class SP
      */
     public static function storageAdd($fileMetadata, $path)
     {
-        try {
-            $baseStoragePath = getcwd() . DIRECTORY_SEPARATOR . $this->app->STORAGE_PATH;
+        $config = (Object) (new SP())->request_config("app");
 
+        try {
+
+            $baseStoragePath = getcwd() . DIRECTORY_SEPARATOR . $config->STORAGE_PATH;
             if (substr($path, 1) === "/") {
                 $storagePath = $baseStoragePath . $path;
             }
             else {
                 $storagePath = $baseStoragePath . DIRECTORY_SEPARATOR . $path;
-            }
-    
-            if (!file_exists($storagePath)) {
+            } 
+
+            if (!file_exists($storagePath)) { 
                 mkdir($storagePath, 0777, true);
             }
-    
-            $fileName = $fileMetadata['name'];
-            $fileTmp = $fileMetadata['tmp_name'];
-            $fileSize = $fileMetadata['size'];
-            $fileError = $fileMetadata['error'];
-            $fileType = $fileMetadata['type']; 
-            
-            // Move the uploaded file to the storage path.
-            if (substr($storagePath, -1) === "/") {
-                $currentUpload = $storagePath . $fileName;
+
+            if (isset($fileMetadata->name) && is_array($fileMetadata->name))
+            {
+                $totalFiles = count($fileMetadata->name); 
+
+                $output = [];
+
+                // Loop through each uploaded file
+                for ($i = 0; $i < $totalFiles; $i++) {    
+                    $fileName = $fileMetadata->name[$i];
+                    $fileTmp = $fileMetadata->tmp_name[$i];
+                    $fileSize = $fileMetadata->size[$i];
+                    $fileError = $fileMetadata->error[$i];
+                    $fileType = $fileMetadata->type[$i];  
+                    
+                    // Move the uploaded file to the storage path.
+                    if (substr($storagePath, -1) === "/") {
+                        $currentUpload = $storagePath . $fileName;
+                    }
+                    else {
+                        $currentUpload = $storagePath . DIRECTORY_SEPARATOR . $fileName;
+                    }
+
+                    // If the file exists on path, delete it, and replace it with the new one.
+                    if (file_exists($currentUpload)) {
+                        unlink($currentUpload);
+                    }
+                    
+                    $fileDestination = $currentUpload;
+                    move_uploaded_file($fileTmp, $fileDestination); 
+
+                    array_push($output, $fileDestination);
+                }  
             }
             else {
-                $currentUpload = $storagePath . DIRECTORY_SEPARATOR . $fileName;
+                $fileName = $fileMetadata->name;
+                $fileTmp = $fileMetadata->tmp_name;
+                $fileSize = $fileMetadata->size;
+                $fileError = $fileMetadata->error;
+                $fileType = $fileMetadata->type; 
+                
+                // Move the uploaded file to the storage path.
+                if (substr($storagePath, -1) === "/") {
+                    $currentUpload = $storagePath . $fileName;
+                }
+                else {
+                    $currentUpload = $storagePath . DIRECTORY_SEPARATOR . $fileName;
+                }
+
+                // If the file exists on path, delete it, and replace it with the new one.
+                if (file_exists($currentUpload)) {
+                    unlink($currentUpload);
+                }
+                
+                $fileDestination = $currentUpload;
+                move_uploaded_file($fileTmp, $fileDestination);
+        
+                $output = $fileDestination;
             }
 
-            // If the file exists on path, delete it, and replace it with the new one.
-            if (file_exists($currentUpload)) {
-                unlink($currentUpload);
-            }
-            
-            $fileDestination = $currentUpload;
-            move_uploaded_file($fileTmp, $fileDestination);
-    
-            return $fileDestination;
+            return $output;
         } catch (\Throwable $th) {
             return $th;
         }

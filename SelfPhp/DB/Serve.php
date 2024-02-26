@@ -4,14 +4,17 @@ namespace SelfPhp\DB;
 
 use SelfPhp\SP;
 use SelfPhp\DB\DatabaseManager as DB; 
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Serve
  * 
  * Handles database operations such as saving, updating, and fetching rows.
  */
-class Serve extends DB
+class Serve extends Model
 {
+    use DB;
+    
     /**
      * The model object. 
      * @var object
@@ -41,15 +44,15 @@ class Serve extends DB
      * @var array
      */
     private $rows;
-
+    
     /**
-     * Establishes a database connection using the DB class.
+     * Establishes a database spconnection using the DB class.
      *
      * @return mixed The result of the connect() method from the DB class.
      *               The specific return type depends on the implementation of the DB::connect() method.
      */
-    protected function getconnection() {
-        return DB::connect();
+    public function getspconnection() {  
+        // return DB::connect();
     }
 
     /**
@@ -81,7 +84,7 @@ class Serve extends DB
     /**
      * Checks if the database configuration is set correctly for the current model.
      * Throws an exception if the database table is not set.
-     * If the database connection is not set, it attempts to retrieve it.
+     * If the database spconnection is not set, it attempts to retrieve it.
      *
      * @throws \Exception if the database table is not set for the model.
      */
@@ -102,9 +105,9 @@ class Serve extends DB
             throw new \Exception('No database table set in ' . $this->model . ' model.');
         }
 
-        // If the database connection is not set, attempt to retrieve it
-        if (empty($this->connection)) {
-            $this->connection = $this->getconnection();
+        // If the database spconnection is not set, attempt to retrieve it
+        if (empty($this->spconnection)) {
+            $this->spconnection = $this->getspconnection();
         }
     }
 
@@ -120,7 +123,7 @@ class Serve extends DB
      *                      execution by the SQL post request.
      * @return bool 
      */
-    public function save(array $post_object = [])
+    public function save(array $post_object = [], $table=null)
     {
         $this->checkIfDBIsSetCorrectly();  
 
@@ -128,7 +131,7 @@ class Serve extends DB
             $post_object = $this->data;
         }
 
-        try {
+        // try {
             $table_column_keys = array_keys($post_object);
 
             $new_table_column_keys = [];
@@ -151,17 +154,76 @@ class Serve extends DB
             $key_values = implode("', '", $key_values);
 
             $query = "INSERT INTO $this->table($table_column_keys) VALUES('$key_values')";
-            $result = mysqli_query($this->connection, $query); 
+
+            // echo $query;
+            // exit;
+            $result = mysqli_query($this->spconnection, $query); 
 
             if ($result == true or is_object($result)) {
                 return true;
             } else { 
                 return false;
             }
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error);
-        } 
+        // } catch (\Throwable $error) {
+        //     SP::debugBacktraceShow($error);
+        // } 
     }
+
+    /**
+     * Saving of the post object is done here. 
+     * 
+     * An SQL post request is executed on this function.
+     * Extract keys passed on the post object.
+     * Extract key values passed on the post object 
+     * DB Query(INSERT)
+     * 
+     * @param array $post_object A post object that is passed as a parameter for 
+     *                      execution by the SQL post request.
+     * @return bool 
+     */
+    public function set(array $post_object = [], $table=null)
+    { 
+        if (count($post_object) == 0) {
+            $post_object = $this->data;
+        }
+
+        // try {
+            $table_column_keys = array_keys($post_object);
+
+            $new_table_column_keys = [];
+            foreach ($table_column_keys as $key => $value) {
+                array_push($new_table_column_keys, "`$value`");
+            }
+            
+            $table_column_keys = $new_table_column_keys;
+            $table_column_keys = implode(", ", $table_column_keys);  
+
+            $key_values = array_values($post_object);
+
+            $new_key_values = array();
+            foreach ($key_values as $key => $value) {
+                array_push($new_key_values, ($value ? str_replace("'", "`", $value) : null));
+            }
+
+            $key_values = $new_key_values; 
+
+            $key_values = implode("', '", $key_values);
+
+            $query = "INSERT INTO $table($table_column_keys) VALUES('$key_values')";
+
+            // echo $query;
+            // exit;
+            $result = mysqli_query($this->spconnection, $query); 
+
+            if ($result == true or is_object($result)) {
+                return true;
+            } else { 
+                return false;
+            }
+        // } catch (\Throwable $error) {
+        //     SP::debugBacktraceShow($error);
+        // } 
+    } 
 
     /**
      * Updates rows based on specified conditions.
@@ -171,53 +233,58 @@ class Serve extends DB
      * @return bool 
      */
     public function quickUpdate($post_object = [], $params_array = []) { 
-        $this->checkIfDBIsSetCorrectly(); 
-
-        if (count($post_object) == 0) {
-            $post_object = $this->data;
-        }
-
-        if (count($params_array) == 0) {
-            $params_array = $this->params;
-        }
-
-        // Where clause params
-        $appendable_query_string = null; 
-
-        if (count($params_array) > 0)
-        {
-            foreach ($params_array as $key => $value) {
-                if (!empty($value)) {
-                    $command = $key . ' = ' . "$value";
-                    $appendable_query_string .= $command;
-                } 
-            } 
-        }
-        // End of where clause params
-
-        // Params with  update values
-        $final_params = array(); 
-        foreach ($post_object as $col_key_name => $col_key_value) { 
-            if (!empty($col_key_value)) {
-                array_push($final_params, $col_key_name . ' = ' . "'" . ($col_key_value ? str_replace("'", "`", $col_key_value) : null) . "'" );  
-            }
-        }
-
-        $this->final_params = implode(",", $final_params); 
-
-        if (empty($appendable_query_string)) {
-            $query = "UPDATE $this->table SET " . $this->final_params; 
-        }
-        else { 
-            $query = "UPDATE $this->table SET $this->final_params WHERE " . $appendable_query_string; 
-        } 
         
-        $result = mysqli_query($this->connection, $query);
+        $this->checkIfDBIsSetCorrectly(); 
+        try {
+            if (count($post_object) == 0) {
+                $post_object = $this->data;
+            }
 
-        if ($result == true or is_object($result)) {
-            return true;
-        } else { 
-            return false;
+            if (count($params_array) == 0) {
+                $params_array = $this->params;
+            }
+
+            // Where clause params
+            $appendable_query_string = null; 
+
+            if (count($params_array) > 0)
+            {
+                foreach ($params_array as $key => $value) {
+                    if (!empty($value)) {
+                        $command = $key . ' = ' . "$value";
+                        $appendable_query_string .= $command;
+                    } 
+                } 
+            }
+            // End of where clause params
+
+            // Params with  update values
+            $final_params = array(); 
+            foreach ($post_object as $col_key_name => $col_key_value) { 
+                if (!empty($col_key_value)) {
+                    array_push($final_params, $col_key_name . ' = ' . "'" . ($col_key_value ? str_replace("'", "`", $col_key_value) : null) . "'" );  
+                }
+            }
+
+            $this->final_params = implode(",", $final_params); 
+
+            if (empty($appendable_query_string)) {
+                $query = "UPDATE $this->table SET " . $this->final_params; 
+            }
+            else { 
+                $query = "UPDATE $this->table SET $this->final_params WHERE " . $appendable_query_string; 
+            } 
+            
+            $result = mysqli_query($this->spconnection, $query); 
+
+            
+            if ($result == true or is_object($result)) {
+                return true;
+            } else { 
+                return false;
+            } 
+        } catch (\Throwable $th) {
+            return $th;
         }
     }
 
@@ -234,7 +301,7 @@ class Serve extends DB
 
         try {
             $query = "SELECT * FROM $this->table";
-            $result = mysqli_query($this->connection, $query);
+            $result = mysqli_query($this->spconnection, $query);
 
             $row_array = array();
             
@@ -263,7 +330,7 @@ class Serve extends DB
 
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at DESC";
-            $result = mysqli_query($this->connection, $query);
+            $result = mysqli_query($this->spconnection, $query);
 
             $row_array = array();
 
@@ -293,7 +360,7 @@ class Serve extends DB
 
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at ASC";
-            $result = mysqli_query($this->connection, $query);
+            $result = mysqli_query($this->spconnection, $query);
 
             $row_array = array();
 
@@ -325,7 +392,7 @@ class Serve extends DB
             $row = array();
 
             $query = "SELECT * FROM $this->table WHERE id='" . $id . "'";
-            $result = mysqli_query($this->connection, $query); 
+            $result = mysqli_query($this->spconnection, $query); 
 
             if ($result == true or is_object($result)) {
                 $row = mysqli_fetch_assoc($result);
@@ -353,7 +420,7 @@ class Serve extends DB
 
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
-            $result = mysqli_query($this->connection, $query);
+            $result = mysqli_query($this->spconnection, $query);
             
             $row_count = mysqli_num_rows($result);
 
@@ -402,7 +469,7 @@ class Serve extends DB
                 $query = "SELECT * FROM $this->table WHERE " . $appendable_query_string; 
             } 
 
-            $result = mysqli_query($this->connection, $query);
+            $result = mysqli_query($this->spconnection, $query);
             
             $row_array = array();
 
@@ -455,7 +522,7 @@ class Serve extends DB
 
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
-            $result = mysqli_query($this->connection, $query); 
+            $result = mysqli_query($this->spconnection, $query); 
 
             $row_array = array();
 
@@ -484,7 +551,7 @@ class Serve extends DB
         
         try {
             $query = "DELETE FROM $this->table WHERE id ='" . $id . "'";
-            $result = mysqli_query($this->connection, $query); 
+            $result = mysqli_query($this->spconnection, $query); 
 
             if ($result) {
                 return true;
@@ -495,4 +562,5 @@ class Serve extends DB
             SP::debugBacktraceShow($error); 
         } 
     }
+    
 }

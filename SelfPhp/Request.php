@@ -70,8 +70,32 @@ class Request {
                 $this->combine_req_array_values([$app_configurations, $_GET]); 
             } 
             
-            if (isset($_FILES)) { 
-                $this->combine_req_array_values([$app_configurations, $_FILES]); 
+            if (isset($_FILES)) {  
+                if (count($_FILES) > 1) {
+                    $files = (object)$_FILES[current(array_keys($_FILES))];
+                    
+                    $this->combine_req_array_values([
+                        $app_configurations, [
+                            current(array_keys($_FILES)) => $files
+                        ]
+                    ]);
+                }
+                else { 
+                    $fileObject = [];
+                    foreach($_FILES as $fileArray) { 
+                        $fileObject['name'] = $fileArray['name'];
+                        $fileObject['type'] = $fileArray['type'];
+                        $fileObject['tmp_name'] = $fileArray['tmp_name'];
+                        $fileObject['error'] = $fileArray['error'];
+                        $fileObject['size'] = $fileArray['size'];
+                    } 
+
+                    $fileObject = (object)$fileObject; 
+                    $this->combine_req_array_values([
+                        $app_configurations, 
+                        [current(array_keys($_FILES)) => $fileObject]
+                    ]);
+                } 
             } 
             
             if (isset($_REQUEST)) {

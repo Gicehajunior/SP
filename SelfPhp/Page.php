@@ -22,16 +22,7 @@ class Page extends SP
      * @return void
      */
     public function __construct() { 
-        // Enable debugging if DEBUG environment variable is set to true.
-        if (strtolower(env("DEBUG")) == "true") { 
-            error_reporting(E_ALL);
-            ini_set('display_errors', 1); 
-        }
-        else {
-            // Disable error reporting in production.
-            error_reporting(0);
-            ini_set('display_errors', 0);
-        } 
+        // ANY EXISTING CONSTRUCTOR LOGIC
     }
 
     /**
@@ -78,14 +69,9 @@ class Page extends SP
      */
     public function set_alert_properties($message) {
         // Check if $message is an array
-        if (is_array($message)){
-            // Check if the array has elements
-            if (count($message) > 0) { 
-                // Set entire response data in session and object based on the provided message or default to null
-                $_SESSION['controller_response_data'] = $this->message = (isset($message) && count($message) > 0)
-                    ?   $message
-                    :   null;
-            }
+        if (is_array($message) && count($message) > 0){ 
+            // Set entire response data in session and object based on the provided message or default to null
+            $_SESSION['controller_response_data'] = $this->message = $message; 
         }
     }
 

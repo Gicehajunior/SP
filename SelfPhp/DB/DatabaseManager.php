@@ -5,14 +5,14 @@ namespace SelfPhp\DB;
 use SelfPhp\SP;
 use \mysqli;
 use \PDO;
+use \SQLite3; 
 use \MongoDB\Driver\Manager;
-use \SQLite3;
-use SelfPhp\DB\SPQueryBuilder; 
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 /**
  * Class DatabaseManager
  * 
- * The DatabaseManager class handles database connections for various database systems
+ * The DatabaseManager class handles database spconnections for various database systems
  * including MySQL, PostgreSQL, MongoDB, SQLite, and SQL Server in the SelfPhp framework.
  * It provides a unified interface for connecting to different databases based on
  * configuration settings, and also includes common database operations such as querying,
@@ -23,9 +23,9 @@ use SelfPhp\DB\SPQueryBuilder;
  * @since 1.0.0 
  * @author Giceha Junior: https://github.com/Gicehajunior
  */
-class DatabaseManager extends SPQueryBuilder {
+trait DatabaseManager {
     /**
-     * The database driver used for the connection (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
+     * The database driver used for the spconnection (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
      *
      * @var string
      */
@@ -67,28 +67,28 @@ class DatabaseManager extends SPQueryBuilder {
     private $database;
 
     /**
-     * Additional options for configuring the database connection.
+     * Additional options for configuring the database spconnection.
      *
      * @var array
      */
     private $options;
 
     /**
-     * The character set used for MySQL database connections.
+     * The character set used for MySQL database spconnections.
      *
      * @var string
      */
     private $charset;
 
     /**
-     * The collation used for MySQL database connections.
+     * The collation used for MySQL database spconnections.
      *
      * @var string
      */
     private $collation;
 
     /**
-     * The table prefix for MySQL database connections.
+     * The table prefix for MySQL database spconnections.
      *
      * @var string
      */
@@ -102,32 +102,32 @@ class DatabaseManager extends SPQueryBuilder {
     private $strict;
 
     /**
-     * The storage engine used for MySQL database connections.
+     * The storage engine used for MySQL database spconnections.
      *
      * @var string
      */
     private $engine;
 
     /**
-     * The default schema for PostgreSQL database connections.
+     * The default schema for PostgreSQL database spconnections.
      *
      * @var string
      */
     private $schema;
 
     /**
-     * The SSL mode used for PostgreSQL database connections.
+     * The SSL mode used for PostgreSQL database spconnections.
      *
      * @var string
      */
     private $sslmode;
 
     /**
-     * The active database connection resource.
+     * The active database spconnection resource.
      *
      * @var resource|MongoDB\Client|PDO
      */
-    private $connection;
+    private $spconnection;
 
     /**
      * The default database type (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
@@ -137,18 +137,18 @@ class DatabaseManager extends SPQueryBuilder {
     private $defaultDB;
 
     /**
-     * The foreign key constraints setting for SQLite database connections.
+     * The foreign key constraints setting for SQLite database spconnections.
      *
      * @var bool
      */
     private $foreign_key_constraints;
 
     /**
-     * Holds any connection error that occurred during the database connection.
+     * Holds any spconnection error that occurred during the database spconnection.
      *
      * @var string|null
      */
-    private $connection_error = null;
+    private $spconnection_error = null;
 
     /** 
      * The data to be saved. 
@@ -170,14 +170,22 @@ class DatabaseManager extends SPQueryBuilder {
      * Initializes the DatabaseManager instance and sets the database configurations
      * based on the application settings.
      */
-    public function __construct() {}
+    public function __construct() {
+        // Set database spconnection common configurations
+        $this->driver = env("DB_CONNECTION") ? env("DB_CONNECTION") : $appDbConfigurations[$this->defaultDB]['driver'];
+        $this->host = env("DB_HOST") ? env("DB_HOST") : $appDbConfigurations[$this->defaultDB]['host'];
+        $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port']; 
+        $this->username = env("DB_USERNAME") ? env("DB_USERNAME") : $appDbConfigurations[$this->defaultDB]['username'];
+        $this->password = (env("DB_NAME")) ? env("DB_PASSWORD") : $appDbConfigurations[$this->defaultDB]['password'];
+        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database']; 
+    }
 
     /**
      * Set the database configurations based on the application settings.
      * 
      * This method determines the default database type (e.g., MySQL, PostgreSQL),
      * reads the corresponding configuration values, and sets the appropriate properties
-     * for the DatabaseManager instance. It also establishes the initial database connection.
+     * for the DatabaseManager instance. It also establishes the initial database spconnection.
      */
     public function setDbConfigurations($defaultDB = null, $appDbConfigurations = []) { 
         $this->defaultDB = $defaultDB;  
@@ -206,22 +214,44 @@ class DatabaseManager extends SPQueryBuilder {
             $this->options = $appDbConfigurations['sqlsrv']['options'];
         }
         
-        // Set database connection common configurations
+        // Set database spconnection common configurations
+        $this->driver = env("DB_CONNECTION") ? env("DB_CONNECTION") : $appDbConfigurations[$this->defaultDB]['driver'];
         $this->host = env("DB_HOST") ? env("DB_HOST") : $appDbConfigurations[$this->defaultDB]['host'];
         $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port']; 
         $this->username = env("DB_USERNAME") ? env("DB_USERNAME") : $appDbConfigurations[$this->defaultDB]['username'];
         $this->password = (env("DB_NAME")) ? env("DB_PASSWORD") : $appDbConfigurations[$this->defaultDB]['password'];
         $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database']; 
     } 
+
+    public function addDBManager() {  
+        $capsule = new Capsule;
+
+        $capsule->addConnection([
+            'driver'    => $this->driver,
+            'host'      => $this->host,
+            'database'  => $this->database,
+            'username'  => $this->username,
+            'password'  => env("DB_PASSWORD"),
+            'charset'   => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix'    => '',
+        ]); 
+
+        // Make this Capsule instance available globally.
+        $capsule->setAsGlobal();
+
+        // Setup the Eloquent ORM.
+        $capsule->bootEloquent();
+    }
     
     /**
-     * Establishes a connection to a MySQL database.
+     * Establishes a spconnection to a MySQL database.
      * 
-     * This method uses the configured parameters to establish a connection to a MySQL
+     * This method uses the configured parameters to establish a spconnection to a MySQL
      * database and performs additional setup, such as setting character set, collation,
      * and other options.
      * 
-     * @return resource|false The MySQL database connection resource or false on failure.
+     * @return resource|false The MySQL database spconnection resource or false on failure.
      */
     public function mysqlConnect() {  
         // Check if the MySQLi extension is installed
@@ -229,8 +259,8 @@ class DatabaseManager extends SPQueryBuilder {
             throw new \Exception("The MySQLi extension is not installed!");
         }
 
-        // Establishing a mysql database connection 
-        $this->connection = mysqli_connect(
+        // Establishing a mysql database spconnection 
+        $this->spconnection = mysqli_connect(
             $this->host,
             $this->username,
             $this->password,
@@ -238,18 +268,18 @@ class DatabaseManager extends SPQueryBuilder {
             $this->port
         );  
 
-        if (!$this->connection) {
-            $this->connection_error = mysqli_connect_error();
+        if (!$this->spconnection) {
+            $this->spconnection_error = mysqli_connect_error();
 
-            die("Connection failed: " . $this->connection_error);
+            die("Connection failed: " . $this->spconnection_error);
         }
         
         // Set character set
-        mysqli_set_charset($this->connection, $this->charset);
+        mysqli_set_charset($this->spconnection, $this->charset);
 
         // Set collation
-        $collationQuery = "SET collation_connection=$this->collation";
-        mysqli_query($this->connection, $collationQuery);
+        $collationQuery = "SET collation_spconnection=$this->collation";
+        mysqli_query($this->spconnection, $collationQuery);
 
         // set prefix
         if ($this->prefix !== null || !empty($this->prefix)) {
@@ -259,12 +289,12 @@ class DatabaseManager extends SPQueryBuilder {
         // Additional configuration options
         if ($this->strict) {
             $strictQuery = "SET SESSION sql_mode='STRICT_ALL_TABLES'";
-            mysqli_query($this->connection, $strictQuery);
+            mysqli_query($this->spconnection, $strictQuery);
         }
 
         if ($this->engine !== null || !empty($this->engine)) {
             $engineQuery = "SET storage_engine=$this->engine";
-            mysqli_query($this->connection, $engineQuery);
+            mysqli_query($this->spconnection, $engineQuery);
         }
 
         // Set any additional options
@@ -272,21 +302,21 @@ class DatabaseManager extends SPQueryBuilder {
             foreach ($this->options as $option => $value) {
                 if (!empty($value)) {
                     $optionQuery = "SET $option=$value"; 
-                    mysqli_query($this->connection, $optionQuery); 
+                    mysqli_query($this->spconnection, $optionQuery); 
                 } 
             }
         } 
 
-        return $this->connection;
+        return $this->spconnection;
     }
 
     /**
-     * Establishes a connection to a PostgreSQL database.
+     * Establishes a spconnection to a PostgreSQL database.
      * 
-     * This method uses the configured parameters to establish a connection to a PostgreSQL
+     * This method uses the configured parameters to establish a spconnection to a PostgreSQL
      * database and performs additional setup, such as setting character set and options.
      * 
-     * @return resource|false The PostgreSQL database connection resource or false on failure.
+     * @return resource|false The PostgreSQL database spconnection resource or false on failure.
      */
     public function postgresqlConnect() {
         // Check if the pgsql extension is installed
@@ -294,34 +324,34 @@ class DatabaseManager extends SPQueryBuilder {
             throw new \Exception("The pgsql extension is not installed!");
         }
 
-        // Establishing a PostgreSQL database connection
-        $connectionString = "host={$this->host} port={$this->port} dbname={$this->database} user={$this->username} password={$this->password}";
+        // Establishing a PostgreSQL database spconnection
+        $spconnectionString = "host={$this->host} port={$this->port} dbname={$this->database} user={$this->username} password={$this->password}";
         
-        // Add additional PostgreSQL-specific connection parameters if needed
+        // Add additional PostgreSQL-specific spconnection parameters if needed
         if (!empty($this->schema)) {
-            $connectionString .= " options=--search_path={$this->schema}";
+            $spconnectionString .= " options=--search_path={$this->schema}";
         }
     
         if (!empty($this->sslmode)) {
-            $connectionString .= " sslmode={$this->sslmode}";
+            $spconnectionString .= " sslmode={$this->sslmode}";
         }
     
-        $this->connection = pg_connect($connectionString);
+        $this->spconnection = pg_connect($spconnectionString);
     
-        // Check if the connection was successful
-        if (!$this->connection) {
-            $this->connection_error = pg_last_error();
+        // Check if the spconnection was successful
+        if (!$this->spconnection) {
+            $this->spconnection_error = pg_last_error();
 
-            die("Connection failed: " . $this->connection_error);
+            die("Connection failed: " . $this->spconnection_error);
         }
     
         // Set client encoding (character set)
-        pg_set_client_encoding($this->connection, $this->charset);
+        pg_set_client_encoding($this->spconnection, $this->charset);
     
         // Additional configuration options
         if ($this->strict) {
             $strictQuery = "SET SESSION sql_mode='STRICT_ALL_TABLES'";
-            pg_query($this->connection, $strictQuery);
+            pg_query($this->spconnection, $strictQuery);
         }
     
         // Set any additional options
@@ -329,27 +359,27 @@ class DatabaseManager extends SPQueryBuilder {
             foreach ($this->options as $option => $value) {
                 if (!empty($value)) {
                     $optionQuery = "SET $option=$value";
-                    pg_query($this->connection, $optionQuery);
+                    pg_query($this->spconnection, $optionQuery);
                 }
             }
         }
     
-        return $this->connection;  
+        return $this->spconnection;  
     }
 
     /**
-     * Establishes a connection to a MongoDB database.
+     * Establishes a spconnection to a MongoDB database.
      * 
-     * This method uses the configured parameters to establish a connection to a MongoDB
+     * This method uses the configured parameters to establish a spconnection to a MongoDB
      * database using the MongoDB\Client class.
      * 
      * @return MongoDB\Client The MongoDB client instance.
      */
     public function mongodbConnect() { 
-        // Establishing a MongoDB connection
+        // Establishing a MongoDB spconnection
         $mongoConnectionOptions = [];
     
-        // Add host and port to connection options
+        // Add host and port to spconnection options
         if (!empty($this->host)) {
             $mongoConnectionOptions['host'] = $this->host;
         }
@@ -358,7 +388,7 @@ class DatabaseManager extends SPQueryBuilder {
             $mongoConnectionOptions['port'] = $this->port;
         }
     
-        // Add additional MongoDB-specific connection parameters if needed
+        // Add additional MongoDB-specific spconnection parameters if needed
         if (!empty($this->username) && !empty($this->password)) {
             $mongoConnectionOptions['username'] = $this->username;
             $mongoConnectionOptions['password'] = $this->password;
@@ -373,24 +403,24 @@ class DatabaseManager extends SPQueryBuilder {
         }
     
         // Create MongoDB client
-        $this->connection = new MongoDB\Client($mongoConnectionOptions);
+        $this->spconnection = new MongoDB\Client($mongoConnectionOptions);
     
-        // Check if the connection was successful
-        if (!$this->connection) {
-            $this->connection_error = "Unable to connect to MongoDB!";
-            die("Connection failed: " . $this->connection_error);
+        // Check if the spconnection was successful
+        if (!$this->spconnection) {
+            $this->spconnection_error = "Unable to connect to MongoDB!";
+            die("Connection failed: " . $this->spconnection_error);
         }
     
-        return $this->connection;
+        return $this->spconnection;
     }    
 
     /**
-     * Establishes a connection to an SQLite database.
+     * Establishes a spconnection to an SQLite database.
      * 
-     * This method uses the configured parameters to establish a connection to an SQLite
+     * This method uses the configured parameters to establish a spconnection to an SQLite
      * database using the PDO extension.
      * 
-     * @return PDO|false The SQLite database connection or false on failure.
+     * @return PDO|false The SQLite database spconnection or false on failure.
      */
     public function sqliteConnect() {
         // Check if the pdo_sqlite extension is installed
@@ -398,33 +428,33 @@ class DatabaseManager extends SPQueryBuilder {
             throw new \Exception("The pdo_sqlite extension is not installed!");
         }
 
-        // Establishing an SQLite database connection
+        // Establishing an SQLite database spconnection
         $dsn = "sqlite:" . $this->database;
     
         try {
-            $this->connection = new PDO($dsn);
+            $this->spconnection = new PDO($dsn);
     
             // Set any additional options
             if (!empty($this->options)) {
                 foreach ($this->options as $option => $value) {
-                    $this->connection->setAttribute($option, $value);
+                    $this->spconnection->setAttribute($option, $value);
                 }
             }
 
-            return $this->connection;
+            return $this->spconnection;
         } catch (PDOException $e) {
-            $this->connection_error = $e->getMessage();
-            die("Connection failed: " . $this->connection_error);
+            $this->spconnection_error = $e->getMessage();
+            die("Connection failed: " . $this->spconnection_error);
         }
     }
 
     /**
-     * Establishes a connection to a SQL Server database.
+     * Establishes a spconnection to a SQL Server database.
      * 
-     * This method uses the configured parameters to establish a connection to a SQL Server
+     * This method uses the configured parameters to establish a spconnection to a SQL Server
      * database using the sqlsrv_connect function.
      * 
-     * @return resource|false The SQL Server database connection resource or false on failure.
+     * @return resource|false The SQL Server database spconnection resource or false on failure.
      */
     public function sqlsrvConnect() {
         // Check if the sqlsrv extension is installed
@@ -432,47 +462,47 @@ class DatabaseManager extends SPQueryBuilder {
             throw new \Exception("The sqlsrv extension is not installed!");
         }
 
-        // Establishing a SQL Server database connection
-        $connectionOptions = [
+        // Establishing a SQL Server database spconnection
+        $spconnectionOptions = [
             'Database' => $this->database,
             'Uid' => $this->username,
             'PWD' => $this->password,
             'CharacterSet' => $this->charset,
         ];
 
-        // Add additional SQL Server-specific connection parameters if needed
+        // Add additional SQL Server-specific spconnection parameters if needed
         if (!empty($this->host)) {
-            $connectionOptions['Server'] = $this->host;
+            $spconnectionOptions['Server'] = $this->host;
         }
 
         if (!empty($this->port)) {
-            $connectionOptions['Port'] = $this->port;
+            $spconnectionOptions['Port'] = $this->port;
         }
 
-        // Create SQL Server connection
-        $this->connection = sqlsrv_connect($this->host, $connectionOptions);
+        // Create SQL Server spconnection
+        $this->spconnection = sqlsrv_connect($this->host, $spconnectionOptions);
 
-        // Check if the connection was successful
-        if (!$this->connection) {
-            $this->connection_error = sqlsrv_errors()[0]['message'];
-            die("Connection failed: " . $this->connection_error);
+        // Check if the spconnection was successful
+        if (!$this->spconnection) {
+            $this->spconnection_error = sqlsrv_errors()[0]['message'];
+            die("Connection failed: " . $this->spconnection_error);
         }
 
         // Set any additional options
         if (!empty($this->options)) {
             foreach ($this->options as $option => $value) {
-                sqlsrv_query($this->connection, "SET $option=$value");
+                sqlsrv_query($this->spconnection, "SET $option=$value");
             }
         }
 
-        return $this->connection;
+        return $this->spconnection;
     }
 
     /**
-     * Selects the appropriate method to establish a database connection based on the
+     * Selects the appropriate method to establish a database spconnection based on the
      * default database type.
      * 
-     * @return resource|MongoDB\Client|PDO|false The database connection resource or false on failure.
+     * @return resource|MongoDB\Client|PDO|false The database spconnection resource or false on failure.
      */
     public function _connect() {
         $sp = new SP();
@@ -505,38 +535,38 @@ class DatabaseManager extends SPQueryBuilder {
     }
 
     /**
-     * Closes the active database connection.
+     * Closes the active database spconnection.
      * 
-     * This method closes the active database connection based on the default database type.
+     * This method closes the active database spconnection based on the default database type.
      */
     public function closeConnection() {
-        if ($this->connection) {
+        if ($this->spconnection) {
             switch ($this->defaultDB) {
                 case 'mysql':
-                    mysqli_close($this->connection);
+                    mysqli_close($this->spconnection);
                     break;
 
                 case 'postgresql':
-                    pg_close($this->connection);
+                    pg_close($this->spconnection);
                     break;
 
                 case 'mongodb':
-                    $this->connection->close();
+                    $this->spconnection->close();
                     break;
 
                 case 'sqlite':
-                    $this->connection = null;
+                    $this->spconnection = null;
                     break;
 
                 case 'sqlsrv':
-                    sqlsrv_close($this->connection);
+                    sqlsrv_close($this->spconnection);
                     break; 
                 default:
-                    mysqli_close($this->connection);
+                    mysqli_close($this->spconnection);
             }
 
-            // Set $this->connection to null after closing the connection
-            $this->connection = null;
+            // Set $this->spconnection to null after closing the spconnection
+            $this->spconnection = null;
         }
     } 
 
