@@ -10,7 +10,7 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  *
  * @copyright  2022 SelfPHP Framework Technology
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
- * @version    Release: 1.0.5
+ * @version    Release: 1.0.9
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
  * @since      Class available since Release 1.0.0
  */
@@ -456,12 +456,21 @@ class SP
                     array_push($output, $fileDestination);
                 }  
             }
-            else {
-                $fileName = $fileMetadata->name;
-                $fileTmp = $fileMetadata->tmp_name;
-                $fileSize = $fileMetadata->size;
-                $fileError = $fileMetadata->error;
-                $fileType = $fileMetadata->type; 
+            else { 
+                if (is_object($fileMetadata)) {
+                    $fileName = $fileMetadata->name;
+                    $fileTmp = $fileMetadata->tmp_name;
+                    $fileSize = $fileMetadata->size;
+                    $fileError = $fileMetadata->error;
+                    $fileType = $fileMetadata->type; 
+                }
+                else { 
+                    $fileName = $fileMetadata['name'];
+                    $fileTmp = $fileMetadata['tmp_name'];
+                    $fileSize = $fileMetadata['size'];
+                    $fileError = $fileMetadata['error'];
+                    $fileType = $fileMetadata['type']; 
+                } 
                 
                 // Move the uploaded file to the storage path.
                 if (substr($storagePath, -1) === "/") {

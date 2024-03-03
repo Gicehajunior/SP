@@ -28,7 +28,7 @@
       "ext-sqlite3": "*",
       "illuminate/database": "^10.45"
    },
-   "version": "1.0.8",
+   "version": "1.0.9",
    "autoload": {
       "classmap": [
          "SelfPhp/SP.php", 
