@@ -104,7 +104,7 @@ function sys_domain($var) {
 /**
  * Parses HTML/PHP files with post data
  * 
- * @param string $data The data to be parsed.
+ * @param array $data The data to be parsed.
  * @param string $filename The name of the file being parsed.
  * @return mixed The parsed data.
  */
@@ -185,9 +185,11 @@ function view($view_dir, $data = []) {
  * 
  * @param string $route The route to navigate to.
  * @param array $data The data to be passed to the route.
- * @return void
+ * @return bool
  */
 function route($route, $data = []) {  
     $page = new Page(); 
     $view_response = $page->navigate_to($route, $data); 
+    
+    return $view_response;
 }

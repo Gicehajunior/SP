@@ -1,14 +1,16 @@
 <?php
 
-namespace SelfPhp;  
-use SelfPhp\Path;  
-    
+namespace SelfPhp;
+
+use SelfPhp\Path;
+
 /**
  * Class Route
  * 
  * Handles routing for various HTTP methods and calls the associated controllers.
  */
-class Route {
+class Route
+{
 
     /**
      * @var array The routes to be registered.
@@ -28,27 +30,27 @@ class Route {
      * @param string $controller The controller and method names to be called.
      * @return void
      */
-    public static function route_call($route_method, $route, $controller) {  
-        if (isset($route) || isset($controller)) { 
+    public static function route_call($route_method, $route, $controller)
+    {
+        if (isset($route) || isset($controller)) {
 
-            $controller_array = explode("@", $controller);  
+            $controller_array = explode("@", $controller);
 
             Route::$controller_array = $controller_array;
 
-            $router = new Path(); 
+            $router = new Path();
 
-            $router->map($route_method, $route, function (){
+            $router->map($route_method, $route, function () {
                 Path::route(Route::$controller_array[0], Route::$controller_array[1]);
-            }); 
+            });
 
             if (!method_exists("Route", "route_matcher_call")) {
                 Route::route_matcher_call($router);
             }
-        }
-        else {
+        } else {
             echo "Corrupt route or route refused to parse!";
         }
-    } 
+    }
 
     /**
      * Registers a GET route.
@@ -57,7 +59,8 @@ class Route {
      * @param string $controller The controller and method names to be called.
      * @return void
      */
-    public static function get($route, $controller) { 
+    public static function get($route, $controller)
+    {
         Route::route_call("GET", $route, $controller);
     }
 
@@ -68,7 +71,8 @@ class Route {
      * @param string $controller The controller and method names to be called.
      * @return void
      */
-    public static function post($route, $controller) { 
+    public static function post($route, $controller)
+    {
         Route::route_call("POST", $route, $controller);
     }
 
@@ -79,7 +83,8 @@ class Route {
      * @param string $controller The controller and method names to be called.
      * @return void
      */
-    public static function put($route, $controller) { 
+    public static function put($route, $controller)
+    {
         Route::route_call("PUT", $route, $controller);
     }
 
@@ -90,9 +95,10 @@ class Route {
      * @param string $controller The controller and method names to be called.
      * @return void
      */
-    public static function delete($route, $controller) { 
+    public static function delete($route, $controller)
+    {
         Route::route_call("`DELETE`", $route, $controller);
-    } 
+    }
 
     /**
      * Calls the route matcher for handling matched routes.
@@ -100,11 +106,12 @@ class Route {
      * @param Path $router The Path instance for routing.
      * @return void
      */
-    public static function route_matcher_call($router) {  
+    public static function route_matcher_call($router)
+    {
         $match = $router->match();
 
-        if($match && is_callable( $match['target'] )) {
-            call_user_func_array( $match['target'], $match['params'] ); 
-        }  
+        if ($match && is_callable($match['target'])) {
+            call_user_func_array($match['target'], $match['params']);
+        }
     }
 }

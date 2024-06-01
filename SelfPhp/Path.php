@@ -31,7 +31,7 @@ class Path extends AltoRouter
      * @param string|null $callable_function The callable function/method within the controller.
      */
     public function __construct($controller = null, $callable_function = null)
-    { 
+    {
         // Start session if not already active
         ($this->is_session_active() == true) ? null : session_start();
 
@@ -75,15 +75,15 @@ class Path extends AltoRouter
                 $constructor = $reflectionClass->getMethod('__construct');
                 $params = [];
 
-                foreach ($constructor->getParameters() as $param) { 
+                foreach ($constructor->getParameters() as $param) {
                     if ($param->hasType()) {
-                        $typeName = $param->getType()->getName(); 
-                        if ($param->getType()->isBuiltin()) { 
+                        $typeName = $param->getType()->getName();
+                        if ($param->getType()->isBuiltin()) {
                             $params[] = $typeName == 'int' ? 0 : '';
-                        } else { 
+                        } else {
                             $params[] = new $typeName();
                         }
-                    } else { 
+                    } else {
                         $params[] = null;
                     }
                 }
@@ -93,7 +93,7 @@ class Path extends AltoRouter
             } else {
                 // Create an instance without parameters
                 $controllerInstance = new $controller();
-            } 
+            }
         }
 
         return $controllerInstance;
@@ -129,7 +129,7 @@ class Path extends AltoRouter
                 }
                 $params[] = null;
             }
-        } 
+        }
 
         return $reflectionMethod->invokeArgs($controllerInstance, $params);
     }
@@ -142,22 +142,21 @@ class Path extends AltoRouter
      * @return void
      */
     public static function route($controller, $callable_function)
-    { 
-        try {  
+    {
+        try {
             $path = new Path();
 
-            $sp = new SP(); 
+            $sp = new SP();
 
             SP::requestHelperFunctions("Helper");
 
-            $sp->verify_domain_format(env("APP_DOMAIN")); 
+            $sp->verify_domain_format(env("APP_DOMAIN"));
 
             $route = $path->controller_path($controller);
-            
+
             if (isset($route)) {
                 require $route;
-            }
-            else { 
+            } else {
                 throw new \Exception($controller . " Controller not found");
             }
 
@@ -172,27 +171,25 @@ class Path extends AltoRouter
             $data = null;
 
             // Return data from backend to frontend    
-            if (isset($response)) {  
-                $data = isset($response['controller_response_data']) 
-                    ?   $response['controller_response_data'] 
-                    :   $response;
-            }  
+            if (isset($response)) {
+                $data = isset($response['controller_response_data'])
+                    ? $response['controller_response_data']
+                    : $response;
+            }
 
-            if (isset($response['view_url'])) { 
-                if (file_exists($response['view_url'])) {    
-                    echo $sp->fileParser($data, $response['view_url']); 
-                    (new Path())->unsetSession();    
-                    exit(); 
-                } 
-                else {
+            if (isset($response['view_url'])) {
+                if (file_exists($response['view_url'])) {
+                    echo $sp->fileParser($data, $response['view_url']);
+                    (new Path())->unsetSession();
+                    exit();
+                } else {
                     throw new \Exception("View path could not be found. You might have deleted the view, or the view path is incorrect.");
                 }
-            }    
-            else {  
-                (new Path())->alternative_callable_method_response($response, $sp); 
-                (new Path())->unsetSession(); 
-            } 
-        } catch (\Throwable $th) { 
+            } else {
+                (new Path())->alternative_callable_method_response($response, $sp);
+                (new Path())->unsetSession();
+            }
+        } catch (\Throwable $th) {
             echo $th->getMessage();
         }
     }
@@ -204,11 +201,12 @@ class Path extends AltoRouter
      * @param SP $sp The SP instance for utility functions.
      * @return void
      */
-    public function alternative_callable_method_response($controllerResponse, $sp) { 
+    public function alternative_callable_method_response($controllerResponse, $sp)
+    {
         if (is_array($controllerResponse)) {
-            if (count($controllerResponse) > 0) {   
-                echo $sp->serve_json($controllerResponse); 
-                exit();  
+            if (count($controllerResponse) > 0) {
+                echo $sp->serve_json($controllerResponse);
+                exit();
             }
         }
     }
@@ -250,7 +248,7 @@ class Path extends AltoRouter
             mb_language($config['LANGUAGE']);
         } else {
             throw new \Exception("Language must be in ISO 639-1 format");
-        } 
+        }
 
         // Set the default currency
         // check if currency is rhymes with ISO 4217
@@ -261,7 +259,7 @@ class Path extends AltoRouter
         }
 
         // Override server configurations if they are set and not null
-        if ((isset($config['DISPLAY_ERRORS']) && trim(strtolower($config['DISPLAY_ERRORS'])) == 'on') || (strtolower(env("DEBUG")) == "true")) { 
+        if ((isset($config['DISPLAY_ERRORS']) && trim(strtolower($config['DISPLAY_ERRORS'])) == 'on') || (strtolower(env("DEBUG")) == "true")) {
             ini_set('display_errors', $config['DISPLAY_ERRORS']);
         }
 
@@ -285,7 +283,7 @@ class Path extends AltoRouter
             ini_set('post_max_size', $config['POST_MAX_SIZE']);
         }
 
-        if (session_status() !== PHP_SESSION_ACTIVE) { 
+        if (session_status() !== PHP_SESSION_ACTIVE) {
             if (isset($config['SESSION_LIFETIME'])) {
                 ini_set('session.gc_maxlifetime', $config['SESSION_LIFETIME']);
             }
@@ -323,14 +321,14 @@ class Path extends AltoRouter
         $pattern = '/^[A-Za-z0-9_\-]+$/';
 
         // Check if the provided charset matches the pattern
-        return (bool)preg_match($pattern, $charset);
+        return (bool) preg_match($pattern, $charset);
     }
 
     /**
      * Unsets the controller response session.
      */
     public function unsetSession()
-    { 
+    {
         if (isset($_SESSION['controller_response_data'])) {
             unset($_SESSION['controller_response_data']);
         }
@@ -344,7 +342,7 @@ class Path extends AltoRouter
      */
     public function controller_path($controller)
     {
-        $config = (new SP())->request_config('app'); 
+        $config = (new SP())->request_config('app');
 
         // $controllerPath = $GLOBALS['controllerPath'];
         $controllerPath = $config['CONTROLLER_PATH'];
@@ -356,16 +354,14 @@ class Path extends AltoRouter
 
             if (count($controller_path) > 0) {
                 array_push($controller_found_array, $controller_path);
-            } 
-        } 
+            }
+        }
 
         if (isset($controller_found_array[0][0]) && !empty($controller_found_array[0][0])) {
             return $controller_found_array[0][0];
-        }  
-        else if (isset($controller_found_array[1][0]) && !empty($controller_found_array[1][0])) {
+        } else if (isset($controller_found_array[1][0]) && !empty($controller_found_array[1][0])) {
             return $controller_found_array[1][0];
-        } 
-        else {
+        } else {
             return null;
         }
     }

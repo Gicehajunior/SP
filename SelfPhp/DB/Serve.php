@@ -3,18 +3,24 @@
 namespace SelfPhp\DB;
 
 use SelfPhp\SP;
-use SelfPhp\DB\DatabaseManager as DB; 
+use SelfPhp\DB\DatabaseManager as DB;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Serve
  * 
- * Handles database operations such as saving, updating, and fetching rows.
+ * This class serves as a base for interacting with the database. 
+ * It utilizes functionalities provided by the `Illuminate\Database\Eloquent\Model` 
+ * class and additional features from custom classes like `SelfPhp\SP` and 
+ * `SelfPhp\DB\DatabaseManager` (aliased as `DB`).
+ * 
+ * Through inheritance and composition, `Serve` aims to streamline 
+ * common database operations like saving, updating, and fetching data rows.
  */
 class Serve extends Model
 {
     use DB;
-    
+
     /**
      * The model object. 
      * @var object
@@ -29,7 +35,7 @@ class Serve extends Model
     /**
      * @var array The parameters for the SQL query.
      */
-    private $final_params; 
+    private $final_params;
 
     /**
      * A query row from the database.
@@ -44,71 +50,10 @@ class Serve extends Model
      * @var array
      */
     private $rows;
-    
-    /**
-     * Establishes a database spconnection using the DB class.
-     *
-     * @return mixed The result of the connect() method from the DB class.
-     *               The specific return type depends on the implementation of the DB::connect() method.
-     */
-    public function getspconnection() {  
-        // return DB::connect();
-    }
 
-    /**
-     * Retrieves the first model class found within the "App\models" namespace.
-     *
-     * @return string|null The fully qualified class name of the first model found, or null if none is found.
-     */
-    public function getModel()
+    public function __construct(Model $model)
     {
-        // Array to store discovered model class names.
-        $models = [];
-
-        // Iterate through all declared classes.
-        foreach (get_declared_classes() as $className) {
-            // Create a reflection class for the current class.
-            $classReflector = new \ReflectionClass($className);
-            
-            // Check if the class name contains "App\models".
-            if (strpos($className, 'App\models') !== false) {
-                // Add the class name to the models array.
-                $models[] = $className;
-            }
-        }
-
-        // Return the fully qualified class name of the first model found, or null if none is found.
-        return current($models);
-    }
-
-    /**
-     * Checks if the database configuration is set correctly for the current model.
-     * Throws an exception if the database table is not set.
-     * If the database spconnection is not set, it attempts to retrieve it.
-     *
-     * @throws \Exception if the database table is not set for the model.
-     */
-    public function checkIfDBIsSetCorrectly()
-    { 
-        // Get the model name
-        $this->model = $this->getModel();
-
-        // Get the model object
-        $this->modelObjVars = get_object_vars(new $this->model());
-
-        if (isset($this->modelObjVars['table'])) {
-            $this->table = $this->modelObjVars['table'];
-        }
-
-        // Check if the database table is set
-        if (!isset($this->table) || is_null($this->table) || empty($this->table)) {
-            throw new \Exception('No database table set in ' . $this->model . ' model.');
-        }
-
-        // If the database spconnection is not set, attempt to retrieve it
-        if (empty($this->spconnection)) {
-            $this->spconnection = $this->getspconnection();
-        }
+        // ANY APPLICABLE CONSTRUCTOR LOGIC.
     }
 
     /**
@@ -123,48 +68,45 @@ class Serve extends Model
      *                      execution by the SQL post request.
      * @return bool 
      */
-    public function save(array $post_object = [], $table=null)
+    public function save(array $post_object = [], $table = null)
     {
-        $this->checkIfDBIsSetCorrectly();  
 
         if (count($post_object) == 0) {
             $post_object = $this->data;
         }
 
         // try {
-            $table_column_keys = array_keys($post_object);
+        $table_column_keys = array_keys($post_object);
 
-            $new_table_column_keys = [];
-            foreach ($table_column_keys as $key => $value) {
-                array_push($new_table_column_keys, "`$value`");
-            }
-            
-            $table_column_keys = $new_table_column_keys;
-            $table_column_keys = implode(", ", $table_column_keys);  
+        $new_table_column_keys = [];
+        foreach ($table_column_keys as $key => $value) {
+            array_push($new_table_column_keys, "`$value`");
+        }
 
-            $key_values = array_values($post_object);
+        $table_column_keys = $new_table_column_keys;
+        $table_column_keys = implode(", ", $table_column_keys);
 
-            $new_key_values = array();
-            foreach ($key_values as $key => $value) {
-                array_push($new_key_values, ($value ? str_replace("'", "`", $value) : null));
-            }
+        $key_values = array_values($post_object);
 
-            $key_values = $new_key_values; 
+        $new_key_values = array();
+        foreach ($key_values as $key => $value) {
+            array_push($new_key_values, ($value ? str_replace("'", "`", $value) : null));
+        }
 
-            $key_values = implode("', '", $key_values);
+        $key_values = $new_key_values;
 
-            $query = "INSERT INTO $this->table($table_column_keys) VALUES('$key_values')";
+        $key_values = implode("', '", $key_values);
 
-            // echo $query;
-            // exit;
-            $result = mysqli_query($this->spconnection, $query); 
+        $query = "INSERT INTO $this->table($table_column_keys) VALUES('$key_values')";
 
-            if ($result == true or is_object($result)) {
-                return true;
-            } else { 
-                return false;
-            }
-        // } catch (\Throwable $error) {
+        $result = mysqli_query($this->spconnection, $query);
+
+        if ($result == true or is_object($result)) {
+            return true;
+        } else {
+            return false;
+        }
+        // } catch (\Exception $error) {
         //     SP::debugBacktraceShow($error);
         // } 
     }
@@ -181,22 +123,22 @@ class Serve extends Model
      *                      execution by the SQL post request.
      * @return bool 
      */
-    public function set(array $post_object = [], $table=null)
-    { 
+    public function set(array $post_object = [], $table = null)
+    {
         if (count($post_object) == 0) {
             $post_object = $this->data;
         }
 
-        // try {
+        try {
             $table_column_keys = array_keys($post_object);
 
             $new_table_column_keys = [];
             foreach ($table_column_keys as $key => $value) {
                 array_push($new_table_column_keys, "`$value`");
             }
-            
+
             $table_column_keys = $new_table_column_keys;
-            $table_column_keys = implode(", ", $table_column_keys);  
+            $table_column_keys = implode(", ", $table_column_keys);
 
             $key_values = array_values($post_object);
 
@@ -205,36 +147,34 @@ class Serve extends Model
                 array_push($new_key_values, ($value ? str_replace("'", "`", $value) : null));
             }
 
-            $key_values = $new_key_values; 
+            $key_values = $new_key_values;
 
             $key_values = implode("', '", $key_values);
 
             $query = "INSERT INTO $table($table_column_keys) VALUES('$key_values')";
 
-            // echo $query;
-            // exit;
-            $result = mysqli_query($this->spconnection, $query); 
+            $result = mysqli_query($this->spconnection, $query);
 
             if ($result == true or is_object($result)) {
                 return true;
-            } else { 
+            } else {
                 return false;
             }
-        // } catch (\Throwable $error) {
-        //     SP::debugBacktraceShow($error);
-        // } 
-    } 
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
+            return false;
+        }
+    }
 
     /**
      * Updates rows based on specified conditions.
      * 
      * @param array $post_object The values to be updated.
      * @param array $params_array The conditions for the update.
-     * @return bool 
+     * @return bool|null 
      */
-    public function quickUpdate($post_object = [], $params_array = []) { 
-        
-        $this->checkIfDBIsSetCorrectly(); 
+    public function quickUpdate($post_object = [], $params_array = [])
+    {
         try {
             if (count($post_object) == 0) {
                 $post_object = $this->data;
@@ -245,46 +185,44 @@ class Serve extends Model
             }
 
             // Where clause params
-            $appendable_query_string = null; 
+            $appendable_query_string = null;
 
-            if (count($params_array) > 0)
-            {
+            if (count($params_array) > 0) {
                 foreach ($params_array as $key => $value) {
                     if (!empty($value)) {
                         $command = $key . ' = ' . "$value";
                         $appendable_query_string .= $command;
-                    } 
-                } 
+                    }
+                }
             }
             // End of where clause params
 
             // Params with  update values
-            $final_params = array(); 
-            foreach ($post_object as $col_key_name => $col_key_value) { 
+            $final_params = array();
+            foreach ($post_object as $col_key_name => $col_key_value) {
                 if (!empty($col_key_value)) {
-                    array_push($final_params, $col_key_name . ' = ' . "'" . ($col_key_value ? str_replace("'", "`", $col_key_value) : null) . "'" );  
+                    array_push($final_params, $col_key_name . ' = ' . "'" . ($col_key_value ? str_replace("'", "`", $col_key_value) : null) . "'");
                 }
             }
 
-            $this->final_params = implode(",", $final_params); 
+            $this->final_params = implode(",", $final_params);
 
             if (empty($appendable_query_string)) {
-                $query = "UPDATE $this->table SET " . $this->final_params; 
+                $query = "UPDATE $this->table SET " . $this->final_params;
+            } else {
+                $query = "UPDATE $this->table SET $this->final_params WHERE " . $appendable_query_string;
             }
-            else { 
-                $query = "UPDATE $this->table SET $this->final_params WHERE " . $appendable_query_string; 
-            } 
-            
-            $result = mysqli_query($this->spconnection, $query); 
 
-            
+            $result = mysqli_query($this->spconnection, $query);
+
+
             if ($result == true or is_object($result)) {
                 return true;
-            } else { 
+            } else {
                 return false;
-            } 
-        } catch (\Throwable $th) {
-            return $th;
+            }
+        } catch (\Exception $th) {
+            SP::debugBacktraceShow($th);
         }
     }
 
@@ -292,59 +230,56 @@ class Serve extends Model
      * Fetches all rows from the specified table.
      * 
      * @return array An array of rows fetched.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
     public function fetchAll()
-    { 
-        $this->checkIfDBIsSetCorrectly(); 
-
+    {
         try {
             $query = "SELECT * FROM $this->table";
             $result = mysqli_query($this->spconnection, $query);
 
             $row_array = array();
-            
+
             if ($result) {
-                while($rows = mysqli_fetch_assoc($result)){
+                while ($rows = mysqli_fetch_assoc($result)) {
                     array_push($row_array, $rows);
-                } 
+                }
             }
 
             return current($row_array);
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error); 
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
         }
-    } 
-    
+    }
+
     /**
      * Fetches all rows from the specified table in descending
      * Order while ordered by creation time.
      * 
      * @return array An array of rows fetched.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
-    public function fetchAllInDescOrder() {
-        $this->checkIfDBIsSetCorrectly(); 
-
+    public function fetchAllInDescOrder()
+    {
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at DESC";
             $result = mysqli_query($this->spconnection, $query);
 
             $row_array = array();
 
-            if ($result == true or is_object($result)) { 
+            if ($result == true or is_object($result)) {
 
-                while($rows = mysqli_fetch_assoc($result)){
+                while ($rows = mysqli_fetch_assoc($result)) {
                     array_push($row_array, $rows);
                 }
             }
 
             return $row_array[0];
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error); 
-        } 
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
+        }
     }
 
     /**
@@ -352,11 +287,11 @@ class Serve extends Model
      * Order while ordered by creation time.
      * 
      * @return array An array of rows fetched.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
-    public function fetchAllInAscOrder() {
-        $this->checkIfDBIsSetCorrectly(); 
+    public function fetchAllInAscOrder()
+    {
 
         try {
             $query = "SELECT * FROM $this->table ORDER BY $this->table.created_at ASC";
@@ -364,17 +299,17 @@ class Serve extends Model
 
             $row_array = array();
 
-            if ($result == true or is_object($result)) { 
+            if ($result == true or is_object($result)) {
 
-                while($rows = mysqli_fetch_assoc($result)){
+                while ($rows = mysqli_fetch_assoc($result)) {
                     array_push($row_array, $rows);
                 }
             }
 
             return $row_array[0];
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error); 
-        } 
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
+        }
     }
 
     /**
@@ -383,25 +318,25 @@ class Serve extends Model
      * 
      * @param int $id The primary key id.
      * @return array An array of rows fetched.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
-    public function FetchById(int $id) {
-        $this->checkIfDBIsSetCorrectly(); 
+    public function FetchById($id)
+    {
         try {
             $row = array();
 
             $query = "SELECT * FROM $this->table WHERE id='" . $id . "'";
-            $result = mysqli_query($this->spconnection, $query); 
+            $result = mysqli_query($this->spconnection, $query);
 
             if ($result == true or is_object($result)) {
                 $row = mysqli_fetch_assoc($result);
             }
 
             return $row;
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error); 
-        } 
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
+        }
     }
 
     /**
@@ -409,19 +344,17 @@ class Serve extends Model
      * 
      * @param array $post_object The post object containing the email.
      * @return bool True if the user exists, false otherwise.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
     public function user_exists_on_condition(array $post_object = [])
     {
-        $this->checkIfDBIsSetCorrectly(); 
-
         $exists = false;
 
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
             $result = mysqli_query($this->spconnection, $query);
-            
+
             $row_count = mysqli_num_rows($result);
 
             if ($row_count > 0) {
@@ -431,21 +364,19 @@ class Serve extends Model
             } else {
                 return $exists;
             }
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error); 
-        }  
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
+        }
     }
 
     /**
      * Fetches rows from the table based on specified conditions.
      * 
      * @param array $post_object The conditions for the query.
-     * @return Serve The Serve object.
+     * @return Serve|null The Serve object.
      */
     public function query_by_condition(array $post_object = [])
-    {  
-        $this->checkIfDBIsSetCorrectly();  
-        
+    {
         try {
             $appendable_query_string = null;
 
@@ -458,31 +389,30 @@ class Serve extends Model
                         $appendable_query_string .= $command;
                     } else {
                         $appendable_query_string .= ' AND ' . $command;
-                    } 
-                } 
-            } 
+                    }
+                }
+            }
 
             if (empty($appendable_query_string)) {
-                $query = "SELECT * FROM $this->table"; 
+                $query = "SELECT * FROM $this->table";
+            } else {
+                $query = "SELECT * FROM $this->table WHERE " . $appendable_query_string;
             }
-            else {
-                $query = "SELECT * FROM $this->table WHERE " . $appendable_query_string; 
-            } 
 
             $result = mysqli_query($this->spconnection, $query);
-            
+
             $row_array = array();
 
             if ($result) {
-                while($rows = mysqli_fetch_assoc($result)){
+                while ($rows = mysqli_fetch_assoc($result)) {
                     array_push($row_array, $rows);
                 }
             }
             $this->rows = $row_array;
 
             return $this;
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error);  
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
         }
     }
 
@@ -491,20 +421,22 @@ class Serve extends Model
      * 
      * @return Serve The Serve object.
      */
-    public function first() {
-        if (! is_null($this->rows)) {
+    public function first()
+    {
+        if (!is_null($this->rows)) {
             $this->row = current($this->rows);
-        } 
+        }
 
         return $this->row;
-    } 
+    }
 
     /**
      * Gets all the fetched rows.
      * 
      * @return array The fetched rows.
      */
-    public function get() {
+    public function get()
+    {
         return $this->rows;
     }
 
@@ -513,28 +445,26 @@ class Serve extends Model
      * 
      * @param array $post_object The post object containing the email.
      * @return array|null An array of rows fetched or null if not found.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
     public function getUserByEmail(array $post_object = [])
-    { 
-        $this->checkIfDBIsSetCorrectly(); 
-
+    {
         try {
             $query = "SELECT * FROM $this->table WHERE email='" . $post_object['email'] . "'";
-            $result = mysqli_query($this->spconnection, $query); 
+            $result = mysqli_query($this->spconnection, $query);
 
             $row_array = array();
 
             if ($result) {
-                while($rows = mysqli_fetch_assoc($result)){
+                while ($rows = mysqli_fetch_assoc($result)) {
                     array_push($row_array, $rows);
                 }
             }
 
-            return isset($row_array[0]) ? $row_array[0] : null; 
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error);  
+            return isset($row_array[0]) ? $row_array[0] : null;
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
         }
     }
 
@@ -543,24 +473,23 @@ class Serve extends Model
      * 
      * @param int $id The primary key id.
      * @return bool True if successful, false otherwise.
-     * @return false If an error and if debug is set to true, then,
+     * @return false|null If an error and if debug is set to true, then,
      *                  a debug error will be returned.
      */
-    public function TrashBasedOnId(int $id) {
-        $this->checkIfDBIsSetCorrectly(); 
-        
+    public function TrashBasedOnId($id)
+    {
         try {
             $query = "DELETE FROM $this->table WHERE id ='" . $id . "'";
-            $result = mysqli_query($this->spconnection, $query); 
+            $result = mysqli_query($this->spconnection, $query);
 
             if ($result) {
                 return true;
-            } else { 
+            } else {
                 return false;
             }
-        } catch (\Throwable $error) {
-            SP::debugBacktraceShow($error); 
-        } 
+        } catch (\Exception $error) {
+            SP::debugBacktraceShow($error);
+        }
     }
-    
+
 }

@@ -15,13 +15,13 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  * @since      Class available since Release 1.0.0
  */
 class SP
-{  
+{
     /**
      * Holds the application configurations.
      *
      * @var object
      */
-    public $app; 
+    public $app;
 
     /**
      * Initializes the SP class, loading application configurations.
@@ -29,8 +29,8 @@ class SP
      * @return void
      */
     public function __construct()
-    { 
-        $this->app = (Object) $this->request_config("app"); 
+    {
+        $this->app = (Object) $this->request_config("app");
     }
 
     public static function requestHelperFunctions($helper)
@@ -77,12 +77,12 @@ class SP
     /**
      * Set up configurations.
      *
-     * @return void
+     * @return array
      */
     public function setup_config()
     {
         $config_1 = $this->request_config("config");
-        $config_2 = $this->request_config("app"); 
+        $config_2 = $this->request_config("app");
 
         $config = array_merge($config_1, $config_2);
 
@@ -90,9 +90,9 @@ class SP
     }
 
     public function config($key)
-    { 
+    {
         $config = $this->setup_config();
-        
+
         return $config[$key];
     }
 
@@ -112,14 +112,15 @@ class SP
      *
      * @return string The application name.
      */
-    public function app_name() {
+    public function app_name()
+    {
         $app_name = $this->env("APP_NAME");
 
         if (isset($app_name) && !empty($app_name) && $app_name !== "{{ APP_NAME is not set in the .env file. }}") {
             return $this->env("APP_NAME");
         } else {
             return $this->app->APP_NAME;
-        }   
+        }
     }
 
     /**
@@ -127,15 +128,17 @@ class SP
      *
      * @return string|null The application domain.
      */
-    public function domain() {
+    public function domain()
+    {
         return isset($this->app->APP_DOMAIN) ? $this->app->APP_DOMAIN : null;
-    } 
-        /**
+    }
+    /**
      * Retrieves the login page name.
      *
      * @return string|null The login page name.
      */
-    public function login_page() {    
+    public function login_page()
+    {
         return isset($this->app->AUTHPAGE) ? $this->app->AUTHPAGE : null;
     }
 
@@ -144,7 +147,8 @@ class SP
      *
      * @return string|null The dashboard page name.
      */
-    public function dashboard_page() {    
+    public function dashboard_page()
+    {
         return isset($this->app->HOMEPAGE) ? $this->app->HOMEPAGE : null;
     }
 
@@ -155,16 +159,15 @@ class SP
      * @throws \Exception if the domain format is invalid.
      * @return string|null The verified domain.
      */
-    public function verify_domain_format($domain=null)
-    { 
+    public function verify_domain_format($domain = null)
+    {
         if ($domain !== null) {
-            if (strpos($domain, "http://") == false || strpos($domain, "https://") == false)
-            {
-                return $domain; 
-            }    
+            if (strpos($domain, "http://") == false || strpos($domain, "https://") == false) {
+                return $domain;
+            }
 
             throw new \Exception("DomainFormatException: Domain must be in the format of http:// or https://");
-        }  
+        }
     }
 
     /**
@@ -173,7 +176,7 @@ class SP
      * @param string|null $path The path to be appended.
      * @return string The constructed public path.
      */
-    public function public_path($path=null)
+    public function public_path($path = null)
     {
         $path = ($this->env("APP_DOMAIN") ? $this->env("APP_DOMAIN") : $this->domain()) . DIRECTORY_SEPARATOR . $this->app->PUBLIC_PATH . DIRECTORY_SEPARATOR . $path;
         return $path;
@@ -185,8 +188,8 @@ class SP
      * @param string|null $path The path to be appended.
      * @return string The constructed asset path.
      */
-    public function asset_path($path=null)
-    { 
+    public function asset_path($path = null)
+    {
         $path = ($this->env("APP_DOMAIN") ? $this->env("APP_DOMAIN") : $this->domain()) . DIRECTORY_SEPARATOR . $this->app->PUBLIC_PATH . DIRECTORY_SEPARATOR . $path;
         return $path;
     }
@@ -197,7 +200,7 @@ class SP
      * @param string|null $path The path to be appended.
      * @return string The constructed storage path.
      */
-    public function storage_path($path=null)
+    public function storage_path($path = null)
     {
         $path = ($this->env("APP_DOMAIN") ? $this->env("APP_DOMAIN") : $this->domain()) . DIRECTORY_SEPARATOR . $this->app->STORAGE_PATH . DIRECTORY_SEPARATOR . $path;
         return $path;
@@ -211,22 +214,22 @@ class SP
      * @return string The parsed view content.
      * @throws \Exception if the view file is not found.
      */
-    public function resource($view, $data=[])
-    { 
+    public function resource($view, $data = [])
+    {
         $fileArray = array();
 
         if (empty($this->app)) {
-            $this->app = (Object) $this->request_config("app"); 
-        } 
-        
+            $this->app = (Object) $this->request_config("app");
+        }
+
         $resourcePath = getcwd() . DIRECTORY_SEPARATOR . $this->app->RESOURCE_VIEWS_DIRECTORY;
-        
+
         $files = $this->scanDirectory($resourcePath);
-        
+
         $endName = null;
         $fileName = null;
-        
-        $viewPathArray = explode(".", $view); 
+
+        $viewPathArray = explode(".", $view);
 
         if (strtolower(end($viewPathArray)) == "partial") {
             $endName .= end($viewPathArray);
@@ -236,8 +239,7 @@ class SP
             $fileName .= end($viewPathArray);
 
             array_pop($viewPathArray);
-        }
-        else {
+        } else {
             $endName = null;
 
             $fileName .= end($viewPathArray);
@@ -252,38 +254,37 @@ class SP
         }
 
         $fileMatchArray = array();
-        foreach ($files as $key => $folder) {  
+        foreach ($files as $key => $folder) {
             $file = glob($folder . DIRECTORY_SEPARATOR . $dynamicPath . $fileName . (($endName == null) ? null : ("." . $endName)) . ".php");
-            
+
             if (count($file) > 0) {
                 array_push($fileMatchArray, $file);
             }
         }
 
         $includedFilePath = (isset($fileMatchArray[0])) ? array_unique($fileMatchArray[0]) : null;
-        
-        if (!empty($includedFilePath)) { 
-            $includedFile = current($includedFilePath); 
+
+        if (!empty($includedFilePath)) {
+            $includedFile = current($includedFilePath);
 
             if (count($data) > 0) {
                 $_SESSION['controller_response_data'] = $data;
-            } 
+            }
 
             $controllerParsedData = isset($_SESSION['controller_response_data']) ? $_SESSION['controller_response_data'] : null;
-            
+
             if (is_array($controllerParsedData)) {
                 if (count($controllerParsedData) > 0) {
-                    foreach ($controllerParsedData as $key => $value) {   
+                    foreach ($controllerParsedData as $key => $value) {
                         $data[$key] = $value;
                     }
                 }
-            }  
+            }
 
             return $this->fileParser($data, $includedFile);
-        } 
-        else {
+        } else {
             throw new \Exception("FileNotFoundException: " . $view . ' could not be found.');
-        } 
+        }
     }
 
     /**
@@ -292,7 +293,8 @@ class SP
      * @param string $resource_path The path to the directory to be scanned.
      * @return array An array of file paths.
      */
-    public function scanDirectory($resourcePath) {
+    public function scanDirectory($resourcePath)
+    {
         $files = array();
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($resourcePath),
@@ -315,29 +317,29 @@ class SP
      * @param string|null $filename The name of the file to be parsed.
      * @return string|false The parsed file content.
      */
-    public function fileParser($data=[], $filename = null) { 
-        
+    public function fileParser($data = [], $filename = null)
+    {
+
         // If the data is an array and is empty, 
         // then the data is set to the session data.
         // Otherwise, the session data is set to the data. 
         // By doing so, this will distribute the data to the extended pages.
         if (is_array($data) && count($data) == 0) {
             $data = isset($_SESSION['controller_response_data']) ? $_SESSION['controller_response_data'] : null;
-        } 
-        else {
+        } else {
             $_SESSION['controller_response_data'] = $data;
-        } 
+        }
 
         // Perform the extraction of the data, and require 
         // the full page respectively. 
         if (is_file($filename)) {
-            if (is_array($data) && count($data) > 0) {  
+            if (is_array($data) && count($data) > 0) {
                 extract($data);
             }
-            
-            ob_start();  
 
-            require($filename);
+            ob_start();
+
+            require ($filename);
 
             $htmlcontent = ob_get_clean();
 
@@ -347,7 +349,7 @@ class SP
             // Return the parsed template content.
             return $SPTemplatingEngine->render();
         }
-        
+
         return false;
     }
 
@@ -358,50 +360,53 @@ class SP
      * @param int $MAX_LENGTH The maximum number of rows to read from the CSV file.
      * @return array|null An associative array representing the CSV data.
      */
-    public static function csvToArray($filepath, $maxLength = 1000) {
+    public static function csvToArray($filepath, $maxLength = 1000)
+    {
         $csv = array();
-        
+
         try {
             $count = 0;
             $reader = fopen($filepath, "r");
 
-            if ($reader !== false) { 
+            if ($reader !== false) {
                 $headerCellValues = fgetcsv($reader);
                 $headerColumnCount = count($headerCellValues);
-                
-                while (!feof($reader)) { 
+
+                while (!feof($reader)) {
                     $row = fgetcsv($reader);
-                    
+
                     if ($row !== false && !empty(array_filter($row))) {
-                        $count++; 
+                        $count++;
                         $rowColumnCount = count($row);
-                        
+
                         if ($rowColumnCount == $headerColumnCount) {
                             $entry = array_combine($headerCellValues, $row);
-                            $csv[] = $entry; 
-                        } 
-                        else {
+                            $csv[] = $entry;
+                        } else {
                             return null;
-                        } 
+                        }
 
                         if ($count == $maxLength) {
                             break;
                         }
-                    } 
+                    }
                 }
                 fclose($reader);
-            } 
+            }
 
             return $csv;
-        } catch (\Throwable $th) {
-            return $th;
+        } catch (\Exception $th) {
+            return [
+                'status' => 'error',
+                'message' => $th
+            ];
         }
     }
 
     /**
      * Moves and stores a file in the application's storage directory.
      *
-     * @param array $fileMetadata The metadata of the file.
+     * @param object $fileMetadata The metadata of the file.
      * @param string $path The storage path for the file.
      * @return string The final destination path of the stored file.
      */
@@ -414,34 +419,31 @@ class SP
             $baseStoragePath = getcwd() . DIRECTORY_SEPARATOR . $config->STORAGE_PATH;
             if (substr($path, 1) === "/") {
                 $storagePath = $baseStoragePath . $path;
-            }
-            else {
+            } else {
                 $storagePath = $baseStoragePath . DIRECTORY_SEPARATOR . $path;
-            } 
+            }
 
-            if (!file_exists($storagePath)) { 
+            if (!file_exists($storagePath)) {
                 mkdir($storagePath, 0777, true);
             }
 
-            if (isset($fileMetadata->name) && is_array($fileMetadata->name))
-            {
-                $totalFiles = count($fileMetadata->name); 
+            if (isset($fileMetadata->name) && is_array($fileMetadata->name)) {
+                $totalFiles = count($fileMetadata->name);
 
                 $output = [];
 
                 // Loop through each uploaded file
-                for ($i = 0; $i < $totalFiles; $i++) {    
+                for ($i = 0; $i < $totalFiles; $i++) {
                     $fileName = $fileMetadata->name[$i];
                     $fileTmp = $fileMetadata->tmp_name[$i];
                     $fileSize = $fileMetadata->size[$i];
                     $fileError = $fileMetadata->error[$i];
-                    $fileType = $fileMetadata->type[$i];  
-                    
+                    $fileType = $fileMetadata->type[$i];
+
                     // Move the uploaded file to the storage path.
                     if (substr($storagePath, -1) === "/") {
                         $currentUpload = $storagePath . $fileName;
-                    }
-                    else {
+                    } else {
                         $currentUpload = $storagePath . DIRECTORY_SEPARATOR . $fileName;
                     }
 
@@ -449,34 +451,31 @@ class SP
                     if (file_exists($currentUpload)) {
                         unlink($currentUpload);
                     }
-                    
+
                     $fileDestination = $currentUpload;
-                    move_uploaded_file($fileTmp, $fileDestination); 
+                    move_uploaded_file($fileTmp, $fileDestination);
 
                     array_push($output, $fileDestination);
-                }  
-            }
-            else { 
+                }
+            } else {
                 if (is_object($fileMetadata)) {
                     $fileName = $fileMetadata->name;
                     $fileTmp = $fileMetadata->tmp_name;
                     $fileSize = $fileMetadata->size;
                     $fileError = $fileMetadata->error;
-                    $fileType = $fileMetadata->type; 
-                }
-                else { 
+                    $fileType = $fileMetadata->type;
+                } else {
                     $fileName = $fileMetadata['name'];
                     $fileTmp = $fileMetadata['tmp_name'];
                     $fileSize = $fileMetadata['size'];
                     $fileError = $fileMetadata['error'];
-                    $fileType = $fileMetadata['type']; 
-                } 
-                
+                    $fileType = $fileMetadata['type'];
+                }
+
                 // Move the uploaded file to the storage path.
                 if (substr($storagePath, -1) === "/") {
                     $currentUpload = $storagePath . $fileName;
-                }
-                else {
+                } else {
                     $currentUpload = $storagePath . DIRECTORY_SEPARATOR . $fileName;
                 }
 
@@ -484,15 +483,15 @@ class SP
                 if (file_exists($currentUpload)) {
                     unlink($currentUpload);
                 }
-                
+
                 $fileDestination = $currentUpload;
                 move_uploaded_file($fileTmp, $fileDestination);
-        
+
                 $output = $fileDestination;
             }
 
             return $output;
-        } catch (\Throwable $th) {
+        } catch (\Exception $th) {
             return $th;
         }
     }
@@ -500,15 +499,14 @@ class SP
     /**
      * Initializes SQL debugging based on the DEBUG environment variable.
      *
-     * @param mysqli $db_connection The database connection object.
+     * @param \mysqli $db_connection The database connection object.
      * @throws \Exception if DEBUG is set to true and there is a MySQL error.
      */
     public static function initSqlDebug($dbConnection = null)
     {
         if (!empty((new SP())->env('DEBUG'))) {
-            if (strtolower((new SP())->env('DEBUG')) == 'true') { 
-                throw new \Exception(mysqli_error($dbConnection)); 
-                exit();
+            if (strtolower((new SP())->env('DEBUG')) == 'true') {
+                throw new \Exception(mysqli_error($dbConnection));
             }
         }
     }
@@ -525,8 +523,7 @@ class SP
             if (strtolower((new SP())->env('DEBUG')) == 'true') {
                 if (!empty($exception)) {
                     throw new \Exception($exception);
-                    exit();
-                } 
+                }
             }
         }
     }

@@ -5,7 +5,8 @@ namespace SelfPhp\DB;
 use SelfPhp\SP;
 use \mysqli;
 use \PDO;
-use \SQLite3; 
+use \SQLite3;
+use \MongoDB\Client;
 use \MongoDB\Driver\Manager;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
@@ -23,7 +24,8 @@ use Illuminate\Database\Capsule\Manager as Capsule;
  * @since 1.0.0 
  * @author Giceha Junior: https://github.com/Gicehajunior
  */
-trait DatabaseManager {
+trait DatabaseManager
+{
     /**
      * The database driver used for the spconnection (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
      *
@@ -123,9 +125,7 @@ trait DatabaseManager {
     private $sslmode;
 
     /**
-     * The active database spconnection resource.
-     *
-     * @var resource|MongoDB\Client|PDO
+     * The active database spconnection resource. 
      */
     private $spconnection;
 
@@ -170,14 +170,17 @@ trait DatabaseManager {
      * Initializes the DatabaseManager instance and sets the database configurations
      * based on the application settings.
      */
-    public function __construct() {
+    public function __construct()
+    {
         // Set database spconnection common configurations
+        $appDbConfigurations = (new SP())->getAppDbConfigurations();
+
         $this->driver = env("DB_CONNECTION") ? env("DB_CONNECTION") : $appDbConfigurations[$this->defaultDB]['driver'];
         $this->host = env("DB_HOST") ? env("DB_HOST") : $appDbConfigurations[$this->defaultDB]['host'];
-        $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port']; 
+        $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port'];
         $this->username = env("DB_USERNAME") ? env("DB_USERNAME") : $appDbConfigurations[$this->defaultDB]['username'];
         $this->password = (env("DB_NAME")) ? env("DB_PASSWORD") : $appDbConfigurations[$this->defaultDB]['password'];
-        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database']; 
+        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database'];
     }
 
     /**
@@ -187,55 +190,57 @@ trait DatabaseManager {
      * reads the corresponding configuration values, and sets the appropriate properties
      * for the DatabaseManager instance. It also establishes the initial database spconnection.
      */
-    public function setDbConfigurations($defaultDB = null, $appDbConfigurations = []) { 
-        $this->defaultDB = $defaultDB;  
+    public function setDbConfigurations($defaultDB = null, $appDbConfigurations = [])
+    {
+        $this->defaultDB = $defaultDB;
 
-        if ($this->defaultDB == 'mysql') {  
+        if ($this->defaultDB == 'mysql') {
             $this->charset = $appDbConfigurations['mysql']['charset'];
             $this->collation = $appDbConfigurations['mysql']['collation'];
             $this->prefix = $appDbConfigurations['mysql']['prefix'];
             $this->strict = $appDbConfigurations['mysql']['strict'];
             $this->engine = $appDbConfigurations['mysql']['engine'];
             $this->options = $appDbConfigurations['mysql']['options'];
-        } elseif ($this->defaultDB == 'postgresql') {   
+        } elseif ($this->defaultDB == 'postgresql') {
             $this->schema = $appDbConfigurations['postgresql']['schema'];
             $this->sslmode = $appDbConfigurations['postgresql']['sslmode'];
             $this->options = $appDbConfigurations['postgresql']['options'];
-        } elseif ($this->defaultDB == 'mongodb') { 
+        } elseif ($this->defaultDB == 'mongodb') {
             $this->options = $appDbConfigurations['mongodb']['options'];
-        } elseif ($this->defaultDB == 'sqlite') { 
+        } elseif ($this->defaultDB == 'sqlite') {
             $this->driver = $appDbConfigurations['sqlite']['driver'];
             $this->database = $appDbConfigurations['sqlite']['database'];
             $this->prefix = $appDbConfigurations['sqlite']['prefix'];
             $this->foreign_key_constraints = $appDbConfigurations['sqlite']['foreign_key_constraints'];
-        } elseif ($this->defaultDB == 'sqlsrv') { 
+        } elseif ($this->defaultDB == 'sqlsrv') {
             $this->charset = $appDbConfigurations['sqlsrv']['charset'];
             $this->prefix = $appDbConfigurations['sqlsrv']['prefix'];
             $this->options = $appDbConfigurations['sqlsrv']['options'];
         }
-        
+
         // Set database spconnection common configurations
         $this->driver = env("DB_CONNECTION") ? env("DB_CONNECTION") : $appDbConfigurations[$this->defaultDB]['driver'];
         $this->host = env("DB_HOST") ? env("DB_HOST") : $appDbConfigurations[$this->defaultDB]['host'];
-        $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port']; 
+        $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port'];
         $this->username = env("DB_USERNAME") ? env("DB_USERNAME") : $appDbConfigurations[$this->defaultDB]['username'];
         $this->password = (env("DB_NAME")) ? env("DB_PASSWORD") : $appDbConfigurations[$this->defaultDB]['password'];
-        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database']; 
-    } 
+        $this->database = env("DB_NAME") ? env("DB_NAME") : $appDbConfigurations[$this->defaultDB]['database'];
+    }
 
-    public function addDBManager() {  
+    public function addDBManager()
+    {
         $capsule = new Capsule;
 
         $capsule->addConnection([
-            'driver'    => $this->driver,
-            'host'      => $this->host,
-            'database'  => $this->database,
-            'username'  => $this->username,
-            'password'  => env("DB_PASSWORD"),
-            'charset'   => 'utf8',
+            'driver' => $this->driver,
+            'host' => $this->host,
+            'database' => $this->database,
+            'username' => $this->username,
+            'password' => env("DB_PASSWORD"),
+            'charset' => 'utf8',
             'collation' => 'utf8_unicode_ci',
-            'prefix'    => '',
-        ]); 
+            'prefix' => '',
+        ]);
 
         // Make this Capsule instance available globally.
         $capsule->setAsGlobal();
@@ -243,7 +248,7 @@ trait DatabaseManager {
         // Setup the Eloquent ORM.
         $capsule->bootEloquent();
     }
-    
+
     /**
      * Establishes a spconnection to a MySQL database.
      * 
@@ -253,9 +258,10 @@ trait DatabaseManager {
      * 
      * @return resource|false The MySQL database spconnection resource or false on failure.
      */
-    public function mysqlConnect() {  
+    public function mysqlConnect()
+    {
         // Check if the MySQLi extension is installed
-        if (! extension_loaded('mysqli')) {
+        if (!extension_loaded('mysqli')) {
             throw new \Exception("The MySQLi extension is not installed!");
         }
 
@@ -266,25 +272,20 @@ trait DatabaseManager {
             $this->password,
             $this->database,
             $this->port
-        );  
+        );
 
         if (!$this->spconnection) {
             $this->spconnection_error = mysqli_connect_error();
 
             die("Connection failed: " . $this->spconnection_error);
         }
-        
+
         // Set character set
         mysqli_set_charset($this->spconnection, $this->charset);
 
         // Set collation
         $collationQuery = "SET collation_spconnection=$this->collation";
         mysqli_query($this->spconnection, $collationQuery);
-
-        // set prefix
-        if ($this->prefix !== null || !empty($this->prefix)) {
-            $this->prefix = $this->prefix;
-        }
 
         // Additional configuration options
         if ($this->strict) {
@@ -301,11 +302,11 @@ trait DatabaseManager {
         if (!empty($this->options)) {
             foreach ($this->options as $option => $value) {
                 if (!empty($value)) {
-                    $optionQuery = "SET $option=$value"; 
-                    mysqli_query($this->spconnection, $optionQuery); 
-                } 
+                    $optionQuery = "SET $option=$value";
+                    mysqli_query($this->spconnection, $optionQuery);
+                }
             }
-        } 
+        }
 
         return $this->spconnection;
     }
@@ -318,53 +319,58 @@ trait DatabaseManager {
      * 
      * @return resource|false The PostgreSQL database spconnection resource or false on failure.
      */
-    public function postgresqlConnect() {
-        // Check if the pgsql extension is installed
-        if (! extension_loaded('pgsql')) {
-            throw new \Exception("The pgsql extension is not installed!");
-        }
+    public function postgresqlConnect()
+    {
+        try {
+            // Check if the pgsql extension is installed
+            if (!extension_loaded('pgsql')) {
+                throw new \Exception("The pgsql extension is not installed!");
+            }
 
-        // Establishing a PostgreSQL database spconnection
-        $spconnectionString = "host={$this->host} port={$this->port} dbname={$this->database} user={$this->username} password={$this->password}";
-        
-        // Add additional PostgreSQL-specific spconnection parameters if needed
-        if (!empty($this->schema)) {
-            $spconnectionString .= " options=--search_path={$this->schema}";
-        }
-    
-        if (!empty($this->sslmode)) {
-            $spconnectionString .= " sslmode={$this->sslmode}";
-        }
-    
-        $this->spconnection = pg_connect($spconnectionString);
-    
-        // Check if the spconnection was successful
-        if (!$this->spconnection) {
-            $this->spconnection_error = pg_last_error();
+            // Establishing a PostgreSQL database spconnection
+            $spconnectionString = "host={$this->host} port={$this->port} dbname={$this->database} user={$this->username} password={$this->password}";
 
-            die("Connection failed: " . $this->spconnection_error);
-        }
-    
-        // Set client encoding (character set)
-        pg_set_client_encoding($this->spconnection, $this->charset);
-    
-        // Additional configuration options
-        if ($this->strict) {
-            $strictQuery = "SET SESSION sql_mode='STRICT_ALL_TABLES'";
-            pg_query($this->spconnection, $strictQuery);
-        }
-    
-        // Set any additional options
-        if (!empty($this->options)) {
-            foreach ($this->options as $option => $value) {
-                if (!empty($value)) {
-                    $optionQuery = "SET $option=$value";
-                    pg_query($this->spconnection, $optionQuery);
+            // Add additional PostgreSQL-specific spconnection parameters if needed
+            if (!empty($this->schema)) {
+                $spconnectionString .= " options=--search_path={$this->schema}";
+            }
+
+            if (!empty($this->sslmode)) {
+                $spconnectionString .= " sslmode={$this->sslmode}";
+            }
+
+            $this->spconnection = pg_connect($spconnectionString);
+
+            // Check if the spconnection was successful
+            if (!$this->spconnection) {
+                $this->spconnection_error = pg_last_error();
+
+                die("Connection failed: " . $this->spconnection_error);
+            }
+
+            // Set client encoding (character set)
+            pg_set_client_encoding($this->spconnection, $this->charset);
+
+            // Additional configuration options
+            if ($this->strict) {
+                $strictQuery = "SET SESSION sql_mode='STRICT_ALL_TABLES'";
+                pg_query($this->spconnection, $strictQuery);
+            }
+
+            // Set any additional options
+            if (!empty($this->options)) {
+                foreach ($this->options as $option => $value) {
+                    if (!empty($value)) {
+                        $optionQuery = "SET $option=$value";
+                        pg_query($this->spconnection, $optionQuery);
+                    }
                 }
             }
+        } catch (\Exception $th) {
+            $this->spconnection = null;
         }
-    
-        return $this->spconnection;  
+
+        return $this->spconnection;
     }
 
     /**
@@ -373,46 +379,47 @@ trait DatabaseManager {
      * This method uses the configured parameters to establish a spconnection to a MongoDB
      * database using the MongoDB\Client class.
      * 
-     * @return MongoDB\Client The MongoDB client instance.
+     * @return \MongoDB\Client The MongoDB client instance.
      */
-    public function mongodbConnect() { 
+    public function mongodbConnect()
+    {
         // Establishing a MongoDB spconnection
         $mongoConnectionOptions = [];
-    
+
         // Add host and port to spconnection options
         if (!empty($this->host)) {
             $mongoConnectionOptions['host'] = $this->host;
         }
-    
+
         if (!empty($this->port)) {
             $mongoConnectionOptions['port'] = $this->port;
         }
-    
+
         // Add additional MongoDB-specific spconnection parameters if needed
         if (!empty($this->username) && !empty($this->password)) {
             $mongoConnectionOptions['username'] = $this->username;
             $mongoConnectionOptions['password'] = $this->password;
         }
-    
+
         if (!empty($this->database)) {
             $mongoConnectionOptions['db'] = $this->database;
         }
-    
+
         if (!empty($this->options)) {
             $mongoConnectionOptions += $this->options;
         }
-    
+
         // Create MongoDB client
-        $this->spconnection = new MongoDB\Client($mongoConnectionOptions);
-    
+        $this->spconnection = new Client(null, $mongoConnectionOptions);
+
         // Check if the spconnection was successful
         if (!$this->spconnection) {
             $this->spconnection_error = "Unable to connect to MongoDB!";
             die("Connection failed: " . $this->spconnection_error);
         }
-    
+
         return $this->spconnection;
-    }    
+    }
 
     /**
      * Establishes a spconnection to an SQLite database.
@@ -422,18 +429,19 @@ trait DatabaseManager {
      * 
      * @return PDO|false The SQLite database spconnection or false on failure.
      */
-    public function sqliteConnect() {
+    public function sqliteConnect()
+    {
         // Check if the pdo_sqlite extension is installed
-        if (! extension_loaded('pdo_sqlite')) {
+        if (!extension_loaded('pdo_sqlite')) {
             throw new \Exception("The pdo_sqlite extension is not installed!");
         }
 
         // Establishing an SQLite database spconnection
         $dsn = "sqlite:" . $this->database;
-    
+
         try {
             $this->spconnection = new PDO($dsn);
-    
+
             // Set any additional options
             if (!empty($this->options)) {
                 foreach ($this->options as $option => $value) {
@@ -442,8 +450,8 @@ trait DatabaseManager {
             }
 
             return $this->spconnection;
-        } catch (PDOException $e) {
-            $this->spconnection_error = $e->getMessage();
+        } catch (\PDOException $e) {
+            $this->spconnection_error = $e;
             die("Connection failed: " . $this->spconnection_error);
         }
     }
@@ -456,9 +464,10 @@ trait DatabaseManager {
      * 
      * @return resource|false The SQL Server database spconnection resource or false on failure.
      */
-    public function sqlsrvConnect() {
+    public function sqlsrvConnect()
+    {
         // Check if the sqlsrv extension is installed
-        if (! extension_loaded('sqlsrv')) {
+        if (!extension_loaded('sqlsrv')) {
             throw new \Exception("The sqlsrv extension is not installed!");
         }
 
@@ -502,17 +511,18 @@ trait DatabaseManager {
      * Selects the appropriate method to establish a database spconnection based on the
      * default database type.
      * 
-     * @return resource|MongoDB\Client|PDO|false The database spconnection resource or false on failure.
+     * @return resource|\MongoDB\Client|PDO|false The database spconnection resource or false on failure.
      */
-    public function _connect() {
+    public function _connect()
+    {
         $sp = new SP();
 
         $appDbConfigurations = $sp->getAppDbConfigurations();
 
-        $defaultDB = $appDbConfigurations['default']; 
-        
-        $this->setDbConfigurations($defaultDB, $appDbConfigurations); 
-        
+        $defaultDB = $appDbConfigurations['default'];
+
+        $this->setDbConfigurations($defaultDB, $appDbConfigurations);
+
         if ($defaultDB == 'mysql') {
             return $this->mysqlConnect();
         } elseif ($defaultDB == 'postgresql') {
@@ -525,13 +535,8 @@ trait DatabaseManager {
             return $this->sqlsrvConnect();
         } else {
             // Default to MySQL if the database type is not recognized.
-            return $mysqlConnect();
+            return $this->mysqlConnect();
         }
-    } 
-
-    public static function connect() {
-
-        return (new DatabaseManager())->_connect();
     }
 
     /**
@@ -539,7 +544,8 @@ trait DatabaseManager {
      * 
      * This method closes the active database spconnection based on the default database type.
      */
-    public function closeConnection() {
+    public function closeConnection()
+    {
         if ($this->spconnection) {
             switch ($this->defaultDB) {
                 case 'mysql':
@@ -560,7 +566,7 @@ trait DatabaseManager {
 
                 case 'sqlsrv':
                     sqlsrv_close($this->spconnection);
-                    break; 
+                    break;
                 default:
                     mysqli_close($this->spconnection);
             }
@@ -568,6 +574,6 @@ trait DatabaseManager {
             // Set $this->spconnection to null after closing the spconnection
             $this->spconnection = null;
         }
-    } 
+    }
 
 }

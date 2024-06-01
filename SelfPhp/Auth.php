@@ -32,7 +32,7 @@ class Auth extends Page
         // Use password_verify to check if the password matches the hashed password
         return password_verify($password, $hashed_password);
     }
-    
+
     /**
      * Creates temporary session variables.
      * 
@@ -92,7 +92,7 @@ class Auth extends Page
     public static function User($key)
     {
         return (isset($_SESSION['auth'][$key])) ? $_SESSION['auth'][$key] : null;
-    } 
+    }
 
     /**
      * Retrieves a given session variable.
@@ -104,19 +104,18 @@ class Auth extends Page
     {
         $session_array = [];
 
-        if (is_array($key)){
+        if (is_array($key)) {
             foreach ($key as $value) {
                 // Populate the session array with values for each key
                 $session_array[$value] = (isset($_SESSION[$value])) ? $_SESSION[$value] : null;
             }
-        }
-        else {
+        } else {
             $session_array[$key] = (isset($_SESSION[$key])) ? $_SESSION[$key] : null;
         }
 
         return $session_array[$key];
     }
-    
+
     /**
      * Destroys the current session.
      * 
