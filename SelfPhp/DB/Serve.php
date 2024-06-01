@@ -51,7 +51,7 @@ class Serve extends Model
      */
     private $rows;
 
-    public function __construct(Model $model)
+    public function __construct()
     {
         // ANY APPLICABLE CONSTRUCTOR LOGIC.
     }
