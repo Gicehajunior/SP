@@ -174,7 +174,8 @@ trait DatabaseManager
     {
         // Set database spconnection common configurations
         $appDbConfigurations = (new SP())->getAppDbConfigurations();
-
+        
+        $this->defaultDB = $appDbConfigurations['default'];
         $this->driver = env("DB_CONNECTION") ? env("DB_CONNECTION") : $appDbConfigurations[$this->defaultDB]['driver'];
         $this->host = env("DB_HOST") ? env("DB_HOST") : $appDbConfigurations[$this->defaultDB]['host'];
         $this->port = env("DB_PORT") ? env("DB_PORT") : $appDbConfigurations[$this->defaultDB]['port'];

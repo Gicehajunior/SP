@@ -51,11 +51,6 @@ class Serve extends Model
      */
     private $rows;
 
-    public function __construct()
-    {
-        // ANY APPLICABLE CONSTRUCTOR LOGIC.
-    }
-
     /**
      * Saving of the post object is done here. 
      * 
