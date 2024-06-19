@@ -545,6 +545,18 @@ class DatabaseManager extends Model
         return Capsule::table($table);
     }
 
+    public static function beginTransaction() {
+        return Capsule::beginTransaction();
+    }
+
+    public static function commit() {
+        return Capsule::commit();
+    }
+
+    public static function rollback() {
+        return Capsule::rollback();
+    }
+
     /**
      * Closes the active database spconnection.
      * 
