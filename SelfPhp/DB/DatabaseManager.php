@@ -8,6 +8,7 @@ use \PDO;
 use \SQLite3;
 use \MongoDB\Client;
 use \MongoDB\Driver\Manager;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 /**
@@ -24,7 +25,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
  * @since 1.0.0 
  * @author Giceha Junior: https://github.com/Gicehajunior
  */
-trait DatabaseManager
+class DatabaseManager extends Model
 {
     /**
      * The database driver used for the spconnection (e.g., mysql, postgresql, mongodb, sqlite, sqlsrv).
@@ -538,6 +539,10 @@ trait DatabaseManager
             // Default to MySQL if the database type is not recognized.
             return $this->mysqlConnect();
         }
+    }
+
+    public static function table($table) {
+        return Capsule::table($table);
     }
 
     /**

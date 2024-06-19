@@ -4,7 +4,6 @@ namespace SelfPhp\DB;
 
 use SelfPhp\SP;
 use SelfPhp\DB\DatabaseManager as DB;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * Class Serve
@@ -17,10 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  * Through inheritance and composition, `Serve` aims to streamline 
  * common database operations like saving, updating, and fetching data rows.
  */
-class Serve extends Model
-{
-    use DB;
-
+class Serve extends DB
+{ 
     /**
      * The model object. 
      * @var object
