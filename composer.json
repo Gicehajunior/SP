@@ -28,18 +28,10 @@
       "ext-sqlite3": "*",
       "illuminate/database": "^10.45"
    },
-   "version": "1.1.0",
+   "version": "1.2.0",
    "autoload": {
-      "classmap": [
-         "SelfPhp/SP.php", 
-         "SelfPhp/Route.php",
-         "SelfPhp/Request.php",
-         "SelfPhp/Path.php",
-         "SelfPhp/Page.php",
-         "SelfPhp/Auth.php", 
-         "SelfPhp/DB/Serve.php",
-         "SelfPhp/DB/DatabaseManager.php"
-      ]
+      "psr-4": {
+         "SelfPhp\\": "SelfPhp/"
+      }
    }
-   
 }

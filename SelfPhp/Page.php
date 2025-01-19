@@ -72,7 +72,7 @@ class Page extends SP
     public function set_alert_properties($message)
     {
         // Check if $message is an array
-        if (is_array($message) && count($message) > 0) {
+        if (is_array($message) && !empty($message)) {
             // Set entire response data in session and object based on the provided message or default to null
             $_SESSION['controller_response_data'] = $this->message = $message;
         }
@@ -98,7 +98,7 @@ class Page extends SP
         $this->route = str_replace(".", "/", $route);
 
         // Check if $message is an array and has elements
-        if (is_array($message) && count($message) > 0) {
+        if (is_array($message) && !empty($message)) {
             // Set alert properties based on the provided message 
             $this->set_alert_properties($message);
         }
@@ -108,33 +108,28 @@ class Page extends SP
         exit(0);
     }
 
-
     /**
-     * go_back function
+     * back function
      * 
-     * Redirects to the previous page or a specified route and optionally sets alert properties based on a provided message.
+     * Redirects to the previous page, and optionally sets alert properties based on a provided message.
      * 
-     * @param string|null $route An optional route to navigate to. If null or an array, redirects to the previous page.
      * @param array $message An optional associative array containing alert properties.
      */
-    public function go_back($route = null, $message = [])
+    public function back($message = [])
     {
-        // Check if $route is set
-        if (isset($route)) {
-            // Set the route to the previous page if $route is null or an array, otherwise modify the provided route
-            $this->route = ($route == null || is_array($route)) ? $_SERVER['HTTP_REFERER'] : (str_replace(".", "/", $route));
+        // Check if HTTP_REFERER is set and not empty, else set a fallback route
+        $this->route = isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) 
+            ? $_SERVER['HTTP_REFERER'] 
+            : '/';  // Fallback to homepage or another default route
 
-            // Check if $message is an array and has elements
-            if (is_array($message) && count($message) > 0) {
-                // Set alert properties based on the provided message
-                $this->set_alert_properties($message);
-            }
+        // Check if $message is an array and has elements
+        if (is_array($message) && !empty($message)) { 
+            $this->set_alert_properties($message);
+        } 
 
-            // Redirect to the specified route or the previous page
-            header("Location: /" . $this->route);
-            // Ensure that no further code is executed after the redirect
-            exit();
-        }
+        // Perform the redirect to the determined route
+        header("Location: {$this->route}");
+        exit;
     }
 
 }

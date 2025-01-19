@@ -3,6 +3,7 @@
 use SelfPhp\SP;
 use SelfPhp\Auth;
 use SelfPhp\Page;
+use SelfPhp\SPException;
 
 /**
  * Checks if the user is authenticated
@@ -192,4 +193,31 @@ function route($route, $data = []) {
     $view_response = $page->navigate_to($route, $data); 
     
     return $view_response;
+}
+
+/**
+ * Redirects back to the previous route
+ *  
+ * @param array $data The data to be passed to the route.
+ * @return bool
+ */
+function back($data = []) {  
+    $page = new Page(); 
+    $view_response = $page->back($data); 
+    
+    return $view_response;
+}
+
+function sp_error_logger($error, $error_code=0) { 
+    try {
+        $isDebug = (new SP())->debugMode();
+        
+        if ($isDebug) {
+            throw new \Exception($error);
+        } 
+
+        return "An error occurred!";
+    } catch (\Exception $err) {
+        return "Error [{$err->getCode()}]: {$err->getMessage()} in {$err->getFile()} on line {$err->getLine()}";
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace SelfPhp;
 
+use SelfPhp\SPException; 
 use SelfPhp\TemplatingEngine\SPTemplateEngine;
 
 /**
@@ -12,7 +13,7 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
  * @version    Release: 1.0.9
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
- * @since      Class available since Release 1.0.0
+ * @since      Class available since Release 1.1.0
  */
 class SP
 {
@@ -93,7 +94,7 @@ class SP
     {
         $config = $this->setup_config();
 
-        return $config[$key];
+        return isset($config[$key]) ? $config[$key] : null;
     }
 
     /**
@@ -105,6 +106,33 @@ class SP
     public function env($var_name)
     {
         return isset($_ENV[strtoupper($var_name)]) ? $_ENV[strtoupper($var_name)] : '{{ ' . $var_name . " is not set in the .env file. }}";
+    }
+
+    /**
+     * Determine if debugging mode is enabled.
+     * 
+     * - First checks the application configuration ("DEBUG").
+     * - If the configuration is explicitly set to `true`, debugging is enabled.
+     * - If the configuration is explicitly set to `false`, it falls back to checking the environment variable ("DEBUG").
+     * - Defaults to `false` if neither the configuration nor the environment variable enables debugging.
+     * 
+     * @return bool True if debugging is enabled, false otherwise.
+     */
+    public function debugMode()
+    { 
+        $debug = $this->config("DEBUG");
+
+        // If the config explicitly enables debugging, return true
+        if ($debug === true) {
+            return true;
+        }
+
+        // If the config disables debugging, check the environment variable
+        if ($debug === false && env("DEBUG") === true) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -156,7 +184,7 @@ class SP
      * Verifies the format of the provided domain.
      *
      * @param string|null $domain The domain to be verified.
-     * @throws \Exception if the domain format is invalid.
+     * @throws SPException if the domain format is invalid.
      * @return string|null The verified domain.
      */
     public function verify_domain_format($domain = null)
@@ -166,7 +194,7 @@ class SP
                 return $domain;
             }
 
-            throw new \Exception("DomainFormatException: Domain must be in the format of http:// or https://");
+            throw new SPException("DomainFormatException: Domain must be in the format of http:// or https://");
         }
     }
 
@@ -212,7 +240,7 @@ class SP
      * @param string $view The name of the view file.
      * @param array $data The data to be used in the view.
      * @return string The parsed view content.
-     * @throws \Exception if the view file is not found.
+     * @throws SPException if the view file is not found.
      */
     public function resource($view, $data = [])
     {
@@ -283,7 +311,7 @@ class SP
 
             return $this->fileParser($data, $includedFile);
         } else {
-            throw new \Exception("FileNotFoundException: " . $view . ' could not be found.');
+            throw new SPException("FileNotFoundException: " . $view . ' could not be found.');
         }
     }
 
@@ -395,12 +423,58 @@ class SP
             }
 
             return $csv;
-        } catch (\Exception $th) {
+        } catch (SPException $th) {
             return [
                 'status' => 'error',
                 'message' => $th
             ];
         }
+    }
+
+    /**
+     * Processes the name of an uploaded file.
+     *
+     * @param string $fileName The original file name.
+     * @param bool $autorename Whether to auto-rename the file if a duplicate exists.
+     * @param string|null $custom_name A custom name for the file (optional).
+     * @return string Processed file name.
+     */
+    public function uploads_name_proprocessor(string $fileName, bool $autorename, ?string $custom_name = null): string
+    { 
+        if ($custom_name !== null) {
+            $fileName = $custom_name;
+        }
+        
+        $fileName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $fileName);
+
+        if ($autorename) {
+            $fileName = $this->autoRenameFile($fileName);
+        }
+
+        return $fileName;
+    }
+
+    /**
+     * Generates a unique file name.
+     *
+     * @param string $fileName The original file name.
+     * @return string Unique file name.
+     */
+    private function autoRenameFile(string $fileName): string
+    {
+        $fileInfo = pathinfo($fileName);
+        $uniqueId = uniqid('', true); // Generate a unique identifier
+        $timestamp = time();
+
+        // Combine original name, unique ID, and extension
+        $uniqueFileName = $fileInfo['filename'] . '_' . $uniqueId . '_' . $timestamp;
+
+        // Add the file extension if it exists
+        if (!empty($fileInfo['extension'])) {
+            $uniqueFileName .= '.' . $fileInfo['extension'];
+        }
+
+        return $uniqueFileName;
     }
 
     /**
@@ -410,12 +484,11 @@ class SP
      * @param string $path The storage path for the file.
      * @return string The final destination path of the stored file.
      */
-    public static function storageAdd($fileMetadata, $path)
+    public static function storageAdd($fileMetadata, $path, $autorename=false, $custom_name=null)
     {
-        $config = (Object) (new SP())->request_config("app");
+        $config = (Object) self::request_config("app");
 
         try {
-
             $baseStoragePath = getcwd() . DIRECTORY_SEPARATOR . $config->STORAGE_PATH;
             if (substr($path, 1) === "/") {
                 $storagePath = $baseStoragePath . $path;
@@ -439,6 +512,8 @@ class SP
                     $fileSize = $fileMetadata->size[$i];
                     $fileError = $fileMetadata->error[$i];
                     $fileType = $fileMetadata->type[$i];
+                    
+                    $fileName = $this->uploads_name_proprocessor($fileName, $autorename, $custom_name);
 
                     // Move the uploaded file to the storage path.
                     if (substr($storagePath, -1) === "/") {
@@ -472,6 +547,8 @@ class SP
                     $fileType = $fileMetadata['type'];
                 }
 
+                $fileName = $this->uploads_name_proprocessor($fileName, $autorename, $custom_name);
+
                 // Move the uploaded file to the storage path.
                 if (substr($storagePath, -1) === "/") {
                     $currentUpload = $storagePath . $fileName;
@@ -491,7 +568,7 @@ class SP
             }
 
             return $output;
-        } catch (\Exception $th) {
+        } catch (SPException $th) {
             return $th;
         }
     }
@@ -500,13 +577,13 @@ class SP
      * Initializes SQL debugging based on the DEBUG environment variable.
      *
      * @param \mysqli $db_connection The database connection object.
-     * @throws \Exception if DEBUG is set to true and there is a MySQL error.
+     * @throws SPException if DEBUG is set to true and there is a MySQL error.
      */
     public static function initSqlDebug($dbConnection = null)
     {
-        if (!empty((new SP())->env('DEBUG'))) {
-            if (strtolower((new SP())->env('DEBUG')) == 'true') {
-                throw new \Exception(mysqli_error($dbConnection));
+        if (!empty(self::env('DEBUG'))) {
+            if (strtolower(self::env('DEBUG')) == 'true') {
+                throw new SPException(mysqli_error($dbConnection));
             }
         }
     }
@@ -515,14 +592,14 @@ class SP
      * Shows debug backtrace based on the DEBUG environment variable.
      *
      * @param string|null $exception The exception message to be thrown.
-     * @throws \Exception if DEBUG is set to true and there is an exception.
+     * @throws SPException if DEBUG is set to true and there is an exception.
      */
     public static function debugBacktraceShow($exception = null)
     {
-        if (!empty((new SP())->env('DEBUG'))) {
-            if (strtolower((new SP())->env('DEBUG')) == 'true') {
+        if (!empty(self::env('DEBUG'))) {
+            if (strtolower(self::env('DEBUG')) == 'true') {
                 if (!empty($exception)) {
-                    throw new \Exception($exception);
+                    throw new SPException($exception);
                 }
             }
         }

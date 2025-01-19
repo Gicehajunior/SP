@@ -6,6 +6,7 @@ use AltoRouter;
 use SelfPhp\Request;
 use SelfPhp\SP;
 use SelfPhp\Auth;
+use SelfPhp\SPException; 
 
 /**
  * Custom Path class extending AltoRouter
@@ -144,7 +145,7 @@ class Path extends AltoRouter
     public static function route($controller, $callable_function)
     {
         try {
-            $path = new Path();
+            $path = new self();
 
             $sp = new SP();
 
@@ -157,7 +158,7 @@ class Path extends AltoRouter
             if (isset($route)) {
                 require $route;
             } else {
-                throw new \Exception($controller . " Controller not found");
+                throw new SPException($controller . " Controller not found");
             }
 
             $config = $sp->setup_config();
@@ -180,16 +181,16 @@ class Path extends AltoRouter
             if (isset($response['view_url'])) {
                 if (file_exists($response['view_url'])) {
                     echo $sp->fileParser($data, $response['view_url']);
-                    (new Path())->unsetSession();
+                    (new self())->unsetSession();
                     exit();
                 } else {
-                    throw new \Exception("View path could not be found. You might have deleted the view, or the view path is incorrect.");
+                    throw new SPException("View path could not be found. You might have deleted the view, or the view path is incorrect.");
                 }
             } else {
-                (new Path())->alternative_callable_method_response($response, $sp);
-                (new Path())->unsetSession();
+                (new self())->alternative_callable_method_response($response, $sp);
+                (new self())->unsetSession();
             }
-        } catch (\Exception $th) {
+        } catch (SPException $th) {
             echo $th->getMessage();
         }
     }
@@ -224,7 +225,7 @@ class Path extends AltoRouter
         if ($this->isValidTimezone($config['TIMEZONE'])) {
             date_default_timezone_set($config['TIMEZONE']);
         } else {
-            throw new \Exception("Timezone must be in Continent/City format");
+            throw new SPException("Timezone must be in Continent/City format");
         }
 
         // Set the default locale
@@ -232,14 +233,14 @@ class Path extends AltoRouter
         if (preg_match("/^[a-z]{2}_[A-Z]{2}$/", $config['LOCALE'])) {
             setlocale(LC_ALL, $config['LOCALE']);
         } else {
-            throw new \Exception("Locale must be in ISO 639-1 format");
+            throw new SPException("Locale must be in ISO 639-1 format");
         }
 
         // Set the default character encoding 
         if ($this->isValidCharset($config['CHARACTER_ENCODING'])) {
             mb_internal_encoding($config['CHARACTER_ENCODING']);
         } else {
-            throw new \Exception("Character encoding must be in ISO 8859-1 format");
+            throw new SPException("Character encoding must be in ISO 8859-1 format");
         }
 
         // Set the default language
@@ -247,7 +248,7 @@ class Path extends AltoRouter
         if (preg_match("/^[a-z]{2}$/", $config['LANGUAGE'])) {
             mb_language($config['LANGUAGE']);
         } else {
-            throw new \Exception("Language must be in ISO 639-1 format");
+            throw new SPException("Language must be in ISO 639-1 format");
         }
 
         // Set the default currency
@@ -255,7 +256,7 @@ class Path extends AltoRouter
         if (preg_match("/^[A-Z]{3}$/", $config['CURRENCY'])) {
             setlocale(LC_MONETARY, $config['CURRENCY']);
         } else {
-            throw new \Exception("Currency must be in ISO 4217 format");
+            throw new SPException("Currency must be in ISO 4217 format");
         }
 
         // Override server configurations if they are set and not null

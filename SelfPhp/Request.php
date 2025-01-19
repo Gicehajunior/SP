@@ -3,15 +3,15 @@
 namespace SelfPhp;
 
 use SelfPhp\SP;
+use SelfPhp\SPException;
 
 /**
  * Class Request
  * 
  * Handles and provides access to various request data such as GET, POST, FILES, etc.
  */
-class Request
+class Request extends SP
 {
-
     /**
      * @var object The GET request data.
      */
@@ -33,15 +33,42 @@ class Request
     }
 
     /**
+     * Capture input data by key.
+     *
+     * @param string $var
+     * @param mixed $default
+     * @return mixed
+     */
+    public function capture($key, $default=null) {
+        return $this->get->$key ?? $default;
+    }
+
+    /**
+     * Capture multiple input values by keys.
+     *
+     * @param array $keys
+     * @return array
+     */
+    public function multicapture(array $keys): array
+    {
+        $captured = [];
+
+        foreach ($keys as $key) {
+            $captured[$key] = $this->capture($key);
+        }
+
+        return $captured;
+    }
+
+    /**
      * Retrieves the application configuration.
      * 
      * @return mixed The application configuration.
      */
     public function appConfig()
     {
-        $Request = (new SP())->request_config("app");
-
-        return $Request;
+        $request = $this->request_config("app");
+        return $request;
     }
 
     /**
@@ -52,7 +79,6 @@ class Request
     public function requests()
     {
         $requestObject = $this->set_http_requests();
-
         return (object) $requestObject;
     }
 
@@ -144,5 +170,4 @@ class Request
             }
         }
     }
-
 }

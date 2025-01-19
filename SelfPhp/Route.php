@@ -3,6 +3,7 @@
 namespace SelfPhp;
 
 use SelfPhp\Path;
+use SelfPhp\SPException;
 
 /**
  * Class Route
@@ -36,16 +37,16 @@ class Route
 
             $controller_array = explode("@", $controller);
 
-            Route::$controller_array = $controller_array;
+            self::$controller_array = $controller_array;
 
             $router = new Path();
 
             $router->map($route_method, $route, function () {
-                Path::route(Route::$controller_array[0], Route::$controller_array[1]);
+                Path::route(self::$controller_array[0], self::$controller_array[1]);
             });
 
             if (!method_exists("Route", "route_matcher_call")) {
-                Route::route_matcher_call($router);
+                self::route_matcher_call($router);
             }
         } else {
             echo "Corrupt route or route refused to parse!";
@@ -61,7 +62,7 @@ class Route
      */
     public static function get($route, $controller)
     {
-        Route::route_call("GET", $route, $controller);
+        self::route_call("GET", $route, $controller);
     }
 
     /**
@@ -73,7 +74,7 @@ class Route
      */
     public static function post($route, $controller)
     {
-        Route::route_call("POST", $route, $controller);
+        self::route_call("POST", $route, $controller);
     }
 
     /**
@@ -85,7 +86,7 @@ class Route
      */
     public static function put($route, $controller)
     {
-        Route::route_call("PUT", $route, $controller);
+        self::route_call("PUT", $route, $controller);
     }
 
     /**
@@ -97,7 +98,7 @@ class Route
      */
     public static function delete($route, $controller)
     {
-        Route::route_call("`DELETE`", $route, $controller);
+        self::route_call("`DELETE`", $route, $controller);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace SelfPhp\DB;
 
 use SelfPhp\SP;
+use SelfPhp\SPException; 
 use \mysqli;
 use \PDO;
 use \SQLite3;
@@ -264,7 +265,7 @@ class DatabaseManager extends Model
     {
         // Check if the MySQLi extension is installed
         if (!extension_loaded('mysqli')) {
-            throw new \Exception("The MySQLi extension is not installed!");
+            throw new SPException("The MySQLi extension is not installed!");
         }
 
         // Establishing a mysql database spconnection 
@@ -326,7 +327,7 @@ class DatabaseManager extends Model
         try {
             // Check if the pgsql extension is installed
             if (!extension_loaded('pgsql')) {
-                throw new \Exception("The pgsql extension is not installed!");
+                throw new SPException("The pgsql extension is not installed!");
             }
 
             // Establishing a PostgreSQL database spconnection
@@ -368,7 +369,7 @@ class DatabaseManager extends Model
                     }
                 }
             }
-        } catch (\Exception $th) {
+        } catch (SPException $th) {
             $this->spconnection = null;
         }
 
@@ -435,7 +436,7 @@ class DatabaseManager extends Model
     {
         // Check if the pdo_sqlite extension is installed
         if (!extension_loaded('pdo_sqlite')) {
-            throw new \Exception("The pdo_sqlite extension is not installed!");
+            throw new SPException("The pdo_sqlite extension is not installed!");
         }
 
         // Establishing an SQLite database spconnection
@@ -470,7 +471,7 @@ class DatabaseManager extends Model
     {
         // Check if the sqlsrv extension is installed
         if (!extension_loaded('sqlsrv')) {
-            throw new \Exception("The sqlsrv extension is not installed!");
+            throw new SPException("The sqlsrv extension is not installed!");
         }
 
         // Establishing a SQL Server database spconnection
