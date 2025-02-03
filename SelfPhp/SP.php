@@ -11,9 +11,9 @@ use SelfPhp\TemplatingEngine\SPTemplateEngine;
  *
  * @copyright  2022 SelfPHP Framework Technology
  * @license    https://github.com/Gicehajunior/selfphp-framework/blob/main/LICENSE
- * @version    Release: 1.0.9
+ * @version    Release: 1.2.0
  * @link       https://github.com/Gicehajunior/selfphp-framework/blob/main/config/SP.php
- * @since      Class available since Release 1.1.0
+ * @since      Class available since Release 1.0.0
  */
 class SP
 {
@@ -486,7 +486,7 @@ class SP
      */
     public static function storageAdd($fileMetadata, $path, $autorename=false, $custom_name=null)
     {
-        $config = (Object) self::request_config("app");
+        $config = (Object) (new self())->request_config("app");
 
         try {
             $baseStoragePath = getcwd() . DIRECTORY_SEPARATOR . $config->STORAGE_PATH;
@@ -513,7 +513,7 @@ class SP
                     $fileError = $fileMetadata->error[$i];
                     $fileType = $fileMetadata->type[$i];
                     
-                    $fileName = $this->uploads_name_proprocessor($fileName, $autorename, $custom_name);
+                    $fileName = (new self())->uploads_name_proprocessor($fileName, $autorename, $custom_name);
 
                     // Move the uploaded file to the storage path.
                     if (substr($storagePath, -1) === "/") {
@@ -547,7 +547,7 @@ class SP
                     $fileType = $fileMetadata['type'];
                 }
 
-                $fileName = $this->uploads_name_proprocessor($fileName, $autorename, $custom_name);
+                $fileName = (new self())->uploads_name_proprocessor($fileName, $autorename, $custom_name);
 
                 // Move the uploaded file to the storage path.
                 if (substr($storagePath, -1) === "/") {
@@ -581,8 +581,8 @@ class SP
      */
     public static function initSqlDebug($dbConnection = null)
     {
-        if (!empty(self::env('DEBUG'))) {
-            if (strtolower(self::env('DEBUG')) == 'true') {
+        if (!empty((new self())->env('DEBUG'))) {
+            if (strtolower((new self())->env('DEBUG')) == 'true') {
                 throw new SPException(mysqli_error($dbConnection));
             }
         }
@@ -596,8 +596,8 @@ class SP
      */
     public static function debugBacktraceShow($exception = null)
     {
-        if (!empty(self::env('DEBUG'))) {
-            if (strtolower(self::env('DEBUG')) == 'true') {
+        if (!empty((new self())->env('DEBUG'))) {
+            if (strtolower((new self())->env('DEBUG')) == 'true') {
                 if (!empty($exception)) {
                     throw new SPException($exception);
                 }
