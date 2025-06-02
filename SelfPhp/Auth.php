@@ -147,6 +147,24 @@ class Auth extends Page
      * @param string $var The session variable to check for (default is 'auth').
      * @return bool True if the session is active and contains data for the given key, false otherwise.
      */
+    public static function auth($var = "auth")
+    {
+        // Check if the session has been started
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Ensure the session key exists and contains data
+        return isset($_SESSION[$var]) && !empty($_SESSION[$var]);
+    }
+
+    /**
+     * Retrieves a given session variable from permanent session variables.
+     * 
+     * @param string $key The key of the session variable.
+     * @param string $var The session variable to check for (default is 'auth').
+     * @return mixed|null The session variable value or null if not set.
+     */
     public static function User($key, $var = "auth")
     {
         if (!isset($_SESSION[$var])) {
@@ -165,19 +183,6 @@ class Auth extends Page
     
         return null;
     }
-
-    /**
-     * Retrieves a given session variable from permanent session variables.
-     * 
-     * @param string $key The key of the session variable.
-     * @param string $var The session variable to check for (default is 'auth').
-     * @return mixed|null The session variable value or null if not set.
-     */
-    public static function User($key, $var = "auth")
-    {
-        return (isset($_SESSION[$var][$key])) ? $_SESSION[$var][$key] : null;
-    }
-
     /**
      * Retrieves a given session variable.
      * 
