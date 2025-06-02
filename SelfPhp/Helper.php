@@ -5,6 +5,9 @@ use SelfPhp\Auth;
 use SelfPhp\Page;
 use SelfPhp\SPException;
 
+// Globally accessible config container
+$GLOBALS['config'] = [];
+
 /**
  * Checks if the user is authenticated
  * 
@@ -50,6 +53,66 @@ function config($key) {
     
     return (new SP())->config(strtoupper($key));
 }
+
+
+foreach (config('GLOBAL_CONFIGS') as $key => $value) {
+    $GLOBALS['config'][$key] = include getcwd() . DIRECTORY_SEPARATOR . $value;
+} 
+
+/**
+ * Configuration helper function
+ * 
+ * @param key|group
+ * @return configuration
+ */
+function config_all($group=null)
+{  
+    return !empty($group) ? ($GLOBALS['config'][$group]) : $GLOBALS['config'];
+}
+
+/**
+ * Configuration helper function
+ * 
+ * @param key|group
+ * @return configuration
+ */
+function config_parse($key, $group = 'app')
+{ 
+    return $GLOBALS['config'][$group][$key] ?? null;
+}
+
+/**
+ * Determine and return the current route.
+ *
+ * @return string The current route (e.g. 'bootstrap4', 'bootstrap5')
+ */
+function current_route(): string { 
+    return trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: 'index';
+}
+
+/**
+ * Determine the Bootstrap version to be used for the current route.
+ *
+ * @return string The bootstrap version (e.g. 'bootstrap4', 'bootstrap5')
+ */
+function bootstrap(): string {
+    $config = config_parse('bootstrap', 'assets');
+    
+    $defaultVersion = $config['default'] ?? '4';
+    $routes = $config['routes'] ?? [];
+
+    // Get the current route/view.  
+    $currentRoute = current_route();
+    
+
+    foreach ($routes as $version => $routeList) {
+        if (in_array($currentRoute, $routeList) || in_array('*', $routeList)) {
+            return $version;
+        }
+    }
+
+    return $defaultVersion;
+} 
 
 /**
  * Retrieves the application name
