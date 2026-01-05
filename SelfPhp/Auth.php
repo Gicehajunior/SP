@@ -3,9 +3,51 @@ namespace SelfPhp;
 
 use SelfPhp\Page;
 use SelfPhp\SPException; 
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 class Auth extends Page
 {
+    /**
+     * Generates a JWT token with user data.
+     *
+     * @param array $userData The data to encode into the token (user info, roles, etc.).
+     * @param int $expiry Expiration time in seconds (default 1 day = 86400).
+     * @return string JWT token.
+     */
+    public static function generate_token(array $userData, int $expiry = 86400): string
+    {
+        $issuedAt = time();
+        $expire = $issuedAt + $expiry;
+        $payload = [
+            'iat' => $issuedAt,
+            'exp' => $expire,
+            'data' => $userData
+        ];
+
+        // Use a secret key from env file or config
+        $secretKey = env('JWT_SECRET') ?? env('APP_SECRET');
+
+        return JWT::encode($payload, $secretKey, 'HS256');
+    }
+
+    /**
+     * Verifies and decodes a JWT token.
+     *
+     * @param string $token
+     * @return array|null Returns decoded payload or null if invalid/expired.
+     */
+    public static function verify_token(string $token): ?array
+    {
+        try {
+            $secretKey = env('JWT_SECRET') ?? env('APP_SECRET');
+            $decoded = JWT::decode($token, new Key($secretKey, 'HS256'));
+            return (array)$decoded->data;
+        } catch (\Exception $e) {
+            return null; // token invalid or expired
+        }
+    }
+
     /**
      * Hashes a given password.
      * 

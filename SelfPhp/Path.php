@@ -34,7 +34,9 @@ class Path extends AltoRouter
     public function __construct($controller = null, $callable_function = null)
     {
         // Start session if not already active
-        ($this->is_session_active() == true) ? null : session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }        
 
         $this->controller = $controller;
         $this->callable_function = $callable_function;

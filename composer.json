@@ -26,9 +26,10 @@
       "ext-pdo_pgsql": "*",
       "mongodb/mongodb": "*", 
       "ext-sqlite3": "*",
-      "illuminate/database": "^10.45"
+      "illuminate/database": "^10.45",
+      "firebase/php-jwt": "^6.11"
    },
-   "version": "1.3.0",
+   "version": "1.4.0",
    "autoload": {
       "psr-4": {
          "SelfPhp\\": "SelfPhp/"
