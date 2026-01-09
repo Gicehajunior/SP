@@ -171,19 +171,27 @@ class Request extends SP
             'required' => false,
         ], $rules);
 
-        $results = [];
-        $filteredFiles = $this->filterEmptyFiles($this->normalizedFiles);
+        return $this->validateNode(
+            $this->filterEmptyFiles($this->normalizedFiles),
+            $validationRules
+        );
+    }
 
-        foreach ($filteredFiles as $field => $fileOrFiles) {
-            if ($this->isFileArray($fileOrFiles)) {
-                // Multiple files for this field
-                $results[$field] = [];
-                foreach ($fileOrFiles as $key => $file) {
-                    $results[$field][$key] = $this->validateSingleFile($file, $validationRules);
-                }
-            } else {
-                // Single file for this field
-                $results[$field] = $this->validateSingleFile($fileOrFiles, $validationRules);
+    private function validateNode(array $node, array $rules): array
+    {
+        $results = [];
+
+        foreach ($node as $key => $value) {
+
+            // Leaf file
+            if (is_array($value) && isset($value['tmp_name'], $value['error'])) {
+                $results[$key] = $this->validateSingleFile($value, $rules);
+                continue;
+            }
+
+            // Container → recurse
+            if (is_array($value)) {
+                $results[$key] = $this->validateNode($value, $rules);
             }
         }
 
@@ -204,23 +212,11 @@ class Request extends SP
             throw new \RuntimeException("Cannot create directory: $destination");
         }
 
-        $movedFiles = [];
-        $filteredFiles = $this->filterEmptyFiles($this->normalizedFiles);
-
-        foreach ($filteredFiles as $field => $fileOrFiles) {
-            if ($this->isFileArray($fileOrFiles)) {
-                // Multiple files
-                $movedFiles[$field] = [];
-                foreach ($fileOrFiles as $key => $file) {
-                    $movedFiles[$field][$key] = $this->moveSingleFile($file, $destination, $filenameCallback);
-                }
-            } else {
-                // Single file
-                $movedFiles[$field] = $this->moveSingleFile($fileOrFiles, $destination, $filenameCallback);
-            }
-        }
-
-        return $movedFiles;
+        return $this->moveNode(
+            $this->filterEmptyFiles($this->normalizedFiles),
+            $destination,
+            $filenameCallback
+        );
     }
 
     /**
@@ -357,42 +353,30 @@ class Request extends SP
         ];
     }
 
-    /**
-     * Normalize multiple file uploads.
-     */
     private function normalizeMultipleFiles(array $fileArray): array
     {
         $files = [];
 
-        // Check if this is a multi-dimensional array
-        if (is_array($fileArray['name'][0])) {
-            // Nested arrays: files[images][0], files[images][1]
-            foreach ($fileArray['name'] as $firstKey => $firstArray) {
-                foreach ($firstArray as $secondKey => $name) {
-                    $fileData = [
-                        'name' => $name,
-                        'type' => $fileArray['type'][$firstKey][$secondKey] ?? '',
-                        'tmp_name' => $fileArray['tmp_name'][$firstKey][$secondKey] ?? '',
-                        'error' => $fileArray['error'][$firstKey][$secondKey] ?? UPLOAD_ERR_NO_FILE,
-                        'size' => $fileArray['size'][$firstKey][$secondKey] ?? 0,
-                    ];
-
-                    $files[$firstKey][$secondKey] = $this->createFileInfo($fileData);
-                }
+        foreach ($fileArray['name'] as $key => $value) {
+ 
+            if (is_array($value)) {
+                $files[$key] = $this->normalizeMultipleFiles([
+                    'name'     => $fileArray['name'][$key],
+                    'type'     => $fileArray['type'][$key] ?? [],
+                    'tmp_name' => $fileArray['tmp_name'][$key] ?? [],
+                    'error'    => $fileArray['error'][$key] ?? [],
+                    'size'     => $fileArray['size'][$key] ?? [],
+                ]);
+                continue;
             }
-        } else {
-            // Simple array: files[0], files[1]
-            foreach ($fileArray['name'] as $index => $name) {
-                $fileData = [
-                    'name' => $name,
-                    'type' => $fileArray['type'][$index] ?? '',
-                    'tmp_name' => $fileArray['tmp_name'][$index] ?? '',
-                    'error' => $fileArray['error'][$index] ?? UPLOAD_ERR_NO_FILE,
-                    'size' => $fileArray['size'][$index] ?? 0,
-                ];
-
-                $files[$index] = $this->createFileInfo($fileData);
-            }
+            
+            $files[$key] = $this->createFileInfo([
+                'name'     => $fileArray['name'][$key],
+                'type'     => $fileArray['type'][$key] ?? '',
+                'tmp_name' => $fileArray['tmp_name'][$key] ?? '',
+                'error'    => $fileArray['error'][$key] ?? UPLOAD_ERR_NO_FILE,
+                'size'     => $fileArray['size'][$key] ?? 0,
+            ]);
         }
 
         return $files;
@@ -445,22 +429,25 @@ class Request extends SP
         return $filtered;
     }
 
-    /**
-     * Check if array is a file array or array of files.
-     */
-    private function isFileArray($data): bool
+    private function moveNode(array $node, string $destination, ?callable $filenameCallback): array
     {
-        if (!is_array($data)) {
-            return false;
+        $result = [];
+
+        foreach ($node as $key => $value) {
+
+            // Leaf file
+            if (is_array($value) && isset($value['tmp_name'], $value['error'])) {
+                $result[$key] = $this->moveSingleFile($value, $destination, $filenameCallback);
+                continue;
+            }
+
+            // Container → recurse
+            if (is_array($value)) {
+                $result[$key] = $this->moveNode($value, $destination, $filenameCallback);
+            }
         }
 
-        // If it has 'tmp_name' key, it's a single file
-        if (isset($data['tmp_name'])) {
-            return false;
-        }
-
-        // Otherwise it's an array of files
-        return true;
+        return $result;
     }
 
     /**
