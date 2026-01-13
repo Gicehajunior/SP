@@ -39,6 +39,17 @@ class Request extends SP
     }
 
     /**
+     * Check whether a request is an ajax. This provides a cleaner way
+     * of avoiding conflicts when using same route for different request methods.
+     * 
+     * @return bool
+     */
+    public function isAjax(): bool {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    }
+
+    /**
      * Capture input data by key.
      *
      * @param string $var
@@ -563,6 +574,35 @@ class Request extends SP
         $bytes /= (1 << (10 * $pow));
 
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+        /**
+     * Deletes a file from the server.
+     * 
+     * @param string $filePath The path to the file to be deleted.
+     * @return bool True if the file was deleted, false otherwise.
+     */
+    public function deleteFile(string $filePath): bool
+    {
+        if (file_exists($filePath) && is_file($filePath)) {
+            return unlink($filePath);
+        }
+        return false;
+    }
+
+    /**
+     * Deletes multiple files from the server.
+     * 
+     * @param array $filePaths An array of file paths to be deleted.
+     * @return array An associative array with file paths as keys and deletion results as values.
+     */
+    public function deleteFiles(array $filePaths): array
+    {
+        $results = [];
+        foreach ($filePaths as $filePath) {
+            $results[$filePath] = $this->deleteFile($filePath);
+        }
+
+        return $results;
     }
 
     /**
