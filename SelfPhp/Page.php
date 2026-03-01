@@ -27,42 +27,6 @@ class Page extends SP
     }
 
     /**
-     * View function
-     * 
-     * Renders a view file based on the provided view folder name and optional data.
-     * 
-     * @param string $view_folder_name The name of the view folder (dot notation).
-     * @param mixed|null $data Optional data to pass to the view.
-     * @return string|null The path to the rendered view file or null if the file is not found.
-     */
-    // public function View($view_folder_name, $data = null)
-    // {
-    //     // Build the file path based on the provided view folder name
-    //     $filepath = getcwd() . DIRECTORY_SEPARATOR . "resources/" . str_replace(".", "/", $view_folder_name);
-    //     // Get an array of files matching the file path
-    //     $files = glob($filepath . '.php');
-
-    //     // Extract the route name from the view folder name
-    //     $view_folder_name = explode("/", $view_folder_name);
-    //     $route = end($view_folder_name);
-
-    //     // Check if the route is the login page and the user is authenticated, then redirect to the dashboard
-    //     if (strtolower($route) == strtolower(login_page()) and Auth::auth() == true) {
-    //         $this->navigate_to('dashboard');
-    //     }
-
-    //     // End of Return data from backend to frontend  
-    //     $current_file = current($files);
-    //     // Check if a view file is found, and return its path
-    //     if (isset($current_file)) {
-    //         return $current_file;
-    //     }
-
-    //     return null;
-    // }
-
-
-    /**
      * set_alert_properties function
      * 
      * Sets alert properties in the session based on the provided message.
