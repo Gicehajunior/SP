@@ -67,9 +67,10 @@ class Route extends AltoRouter
      * Parses the controller definition which can be either a string or an array.
      * 
      * @param string|array $controller The controller definition.
+     * @param string|array $middlewares The middlewares definition.
      * @return array Returns an array with 'controller', 'method', and 'middlewares'
      */
-    private static function parseControllerDefinition(string|array $controller): array
+    private static function parseControllerDefinition(string|array $controller, array $middlewares): array
     {
         $result = [
             'controller' => null,
@@ -88,9 +89,9 @@ class Route extends AltoRouter
                 $result['controller'] = $controller[0];
                 $result['method'] = $controller[1];
                 
-                // Extract middlewares from the array (everything after index 1)
-                if (count($controller) > 2) {
-                    $result['middlewares'] = array_slice($controller, 2);
+                // Extract middlewares from the middlewares array
+                if (count($middlewares) > 0) {
+                    $result['middlewares'] = $middlewares;
                 }
             }
         }
@@ -112,7 +113,7 @@ class Route extends AltoRouter
         if (isset($route) || isset($controller)) {
 
             // Parse the controller definition
-            $parsed = self::parseControllerDefinition($controller);
+            $parsed = self::parseControllerDefinition($controller, $middlewares);
             
             // Use middlewares from parsed definition or from parameter (for backward compatibility)
             $routeMiddlewares = !empty($parsed['middlewares']) ? $parsed['middlewares'] : $middlewares;
