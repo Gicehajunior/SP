@@ -42,6 +42,8 @@ class Route extends AltoRouter
      */
     public $callable_function;
 
+    protected static ?self $routerInstance = null;
+
     /**
      * Constructor for the Route class.
      * 
@@ -122,19 +124,11 @@ class Route extends AltoRouter
             self::$controller_array = [$parsed['controller'], $parsed['method']];
             self::$route_middlewares = $routeMiddlewares;
 
-            $router = new self();
-
+            $router = self::instance();
             $router->map($route_method, $route, function () use ($parsed, $routeMiddlewares) {
-                // Execute middlewares before route
                 self::executeMiddlewares($routeMiddlewares);
-                
-                // Execute the route
                 self::route($parsed['controller'], $parsed['method'], $routeMiddlewares);
             });
-
-            if (!method_exists("Route", "route_matcher_call")) {
-                self::route_matcher_call($router);
-            }
         } else {
             echo "Corrupt route or route refused to parse!";
         }
@@ -234,19 +228,40 @@ class Route extends AltoRouter
         self::route_call("DELETE", $route, $controller, $middlewares);
     }
 
+    public static function dispatch(): void
+    {
+        self::route_matcher_call(self::instance());
+    }
+
     /**
-     * Calls the route matcher for handling matched routes.
-     * 
-     * @param Route $router The Route instance for routing.
+     * Execute matched route target.
+     *
+     * @param Route $router
      * @return void
      */
-    public static function route_matcher_call($router)
+    public static function route_matcher_call(Route $router): void
     {
-        $match = $router->match();
+        $match = $router->match(); 
 
-        if ($match && is_callable($match['target'])) {
-            call_user_func_array($match['target'], $match['params']);
+        // No match OR invalid target → 404
+        if (!$match || !isset($match['target']) || !is_callable($match['target'])) {
+            header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
+            echo view('404');
+            exit;
         }
+
+        $params = $match['params'] ?? []; 
+        
+        ($match['target'])(...$params);
+    }
+
+    protected static function instance(): self
+    {
+        if (!self::$routerInstance) {
+            self::$routerInstance = new self();
+        }
+
+        return self::$routerInstance;
     }
 
     /**
