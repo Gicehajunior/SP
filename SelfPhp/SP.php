@@ -32,14 +32,8 @@ class SP
     public function __construct()
     {
         $this->app = (Object) $this->request_config("app");
-    }
-
-    public static function requestHelperFunctions($helper)
-    {
-        $helper = ucfirst(strtolower($helper));
-        require __DIR__ . DIRECTORY_SEPARATOR . $helper . '.php';
-    }
-
+    } 
+    
     /**
      * Requests and returns a specified configuration file.
      *
@@ -232,6 +226,58 @@ class SP
     {
         $path = ($this->env("APP_DOMAIN") ? $this->env("APP_DOMAIN") : $this->domain()) . DIRECTORY_SEPARATOR . $this->app->STORAGE_PATH . DIRECTORY_SEPARATOR . $path;
         return $path;
+    }
+
+    /**
+     * Views the views passed. Accepts the file path of a view,
+     * & Optional data array
+     *
+     * @param string $viewName The name of the view file (without .php).
+     * @param array $data The array to extract and pass to the view.
+     * @param bool $raw Whether to return the rendered view content as raw string.
+     * @return string|void
+     * @throws \Exception If the view is not found.
+     */
+    function view($viewName, $data = [], $raw = false)
+    {
+        $directories = config('RESOURCE_VIEWS_DIRECTORY');
+
+        if (!is_array($directories)) {
+            $directories = [$directories];
+        }
+
+        // Locate the view file in the given directories
+        $viewPath = null;
+        foreach ($directories as $dir) {
+            $fullPath = getcwd() . DIRECTORY_SEPARATOR . rtrim($dir, '/') . DIRECTORY_SEPARATOR . $viewName . '.php';
+            if (file_exists($fullPath)) {
+                $viewPath = $fullPath;
+                break;
+            }
+        }
+
+        if (!$viewPath) {
+            throw new \Exception("View '{$viewName}' not found in any configured application views directory.", 500);
+        }
+
+        // Start output buffering
+        ob_start();
+
+        // Extract variables into current scope
+        extract($data);
+
+        // Include the view file
+        include($viewPath);
+
+        // Get the buffer contents
+        $content = ob_get_clean();
+
+        if ($raw) {
+            return $content; // Return raw view content
+        }
+
+        echo $content;
+        exit;
     }
 
     /**
