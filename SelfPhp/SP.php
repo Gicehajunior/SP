@@ -33,7 +33,7 @@ class SP
     {
         $this->app = (Object) $this->request_config("app");
     } 
-    
+
     /**
      * Requests and returns a specified configuration file.
      *
@@ -41,8 +41,7 @@ class SP
      * @return mixed The requested configuration file.
      */
     public function request_config($config)
-    {
-        $config = ucfirst(strtolower($config));
+    { 
         $config_file = require getcwd() . DIRECTORY_SEPARATOR . "config/" . $config . '.php';
         return $config_file;
     }
@@ -65,7 +64,7 @@ class SP
      */
     public function getAppDbConfigurations()
     {
-        $db_config = $this->request_config("Database");
+        $db_config = $this->request_config("database");
         return $db_config;
     }
 
