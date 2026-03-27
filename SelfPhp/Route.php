@@ -143,20 +143,40 @@ class Route extends AltoRouter
     private static function executeMiddlewares(array $middlewares)
     {
         foreach ($middlewares as $middleware) {
-            if (class_exists($middleware)) {
-                $middlewareInstance = new $middleware();
-                
-                // Check if middleware has handle method
-                if (method_exists($middlewareInstance, 'handle')) {
-                    $response = $middlewareInstance->handle(new Request());
-                    
-                    // If middleware returns false or redirects, stop execution
-                    if ($response === false) {
-                        exit();
-                    }
-                }
-            } else {
+            if (!class_exists($middleware)) {
                 throw new SPException("Middleware {$middleware} not found");
+            }
+
+            $middlewareInstance = new $middleware();
+
+            if (!method_exists($middlewareInstance, 'handle')) {
+                continue; // skip middleware without handle
+            }
+
+            try {
+                $response = $middlewareInstance->handle(new Request());
+
+                // If middleware returns an error array, return JSON immediately
+                if (is_array($response) && ($response['status'] ?? '') === 'error') {
+                    http_response_code($response['code'] ?? 400);
+                    header('Content-Type: application/json');
+                    echo json_encode($response, JSON_PRETTY_PRINT);
+                    exit();
+                }
+
+                // If middleware explicitly stops execution
+                if ($response === false) {
+                    exit();
+                }
+
+            } catch (\Exception $e) {
+                // Catch unexpected errors and return as JSON 
+                echo json_encode([
+                    'status'  => 'error',
+                    'code'    => 500,
+                    'message' => $e->getMessage(),
+                ], JSON_PRETTY_PRINT);
+                exit();
             }
         }
     }
