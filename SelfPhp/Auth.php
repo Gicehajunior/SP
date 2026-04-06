@@ -135,7 +135,11 @@ class Auth extends Page
     public static function start_session($session_object = [], $name = "auth")
     {
         if (is_array($session_object) && count($session_object) > 0) {
-            try {
+            try { 
+                if (isset($_SESSION[$name]) && !is_array($_SESSION[$name])) {
+                    $_SESSION[$name] = [];
+                }
+
                 foreach ($session_object as $key => $value) { 
                     $sanitized_key = self::sanitize_session_key($key);
                     $sanitized_value = self::sanitize_session_value($value);
