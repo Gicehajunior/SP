@@ -21,9 +21,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
  * configuration settings, and also includes common database operations such as querying,
  * inserting, updating, and deleting data.
  * 
- * @package SelfPhp\Database
- * @version 1.0.0
- * @since 1.0.0 
+ * @package SelfPhp\Database 
  * @author Giceha Junior: https://github.com/Gicehajunior
  */
 class DatabaseManager extends Model
@@ -556,6 +554,10 @@ class DatabaseManager extends Model
 
     public static function rollback() {
         return Capsule::rollback();
+    }
+
+    public static function schema() {
+        return Capsule::schema();
     }
 
     /**
